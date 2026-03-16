@@ -1,0 +1,12 @@
+{
+  "$schema": "https://smapi.io/schemas/manifest.json",
+  "Name": "Generic Mod Documentation Framework",
+  "Author": "vapor64",
+  "Version": "1.0.0",
+  "Description": "Adds an in-game documentation viewer so mod authors can provide guides and references for their players.",
+  "UniqueID": "vapor64.GenericModDocumentationFramework",
+  "EntryDll": "GenericModDocumentationFramework.dll",
+  "MinimumApiVersion": "4.1",
+  "MinimumGameVersion": "1.6.0",
+  "UpdateKeys": []
+}

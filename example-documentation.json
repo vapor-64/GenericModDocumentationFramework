@@ -1,0 +1,70 @@
+{
+  "$schema": "https://raw.githubusercontent.com/vapor64/GMDF/master/documentation.schema.json",
+  "format": 1,
+  "modName": "{{modName}}",
+  "pages": [
+    {
+      "name": "{{page.overview}}",
+      "headerImage": {
+        "texture": "assets/banner.png"
+      },
+      "entries": [
+        { "type": "sectionTitle", "text": "{{section.welcome}}" },
+        { "type": "paragraph", "text": "{{desc.intro}}" },
+        { "type": "divider" },
+        { "type": "sectionTitle", "text": "Features" },
+        { "type": "list", "items": [
+          "Feature one description",
+          "Feature two description",
+          "Feature three description"
+        ]},
+        { "type": "spacer", "height": 8 },
+        { "type": "image", "texture": "assets/screenshot.png", "scale": 1.5, "align": "center" },
+        { "type": "caption", "text": "An example screenshot showing the feature in action." },
+        { "type": "spacer", "height": 12 },
+        {
+          "type": "gif",
+          "texture": "assets/animation.png",
+          "frameCount": 8,
+          "frameDuration": 0.1,
+          "scale": 2,
+          "align": "center"
+        },
+        { "type": "caption", "text": "Animated preview (sprite sheet with 8 horizontal frames)." }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "entries": [
+        { "type": "sectionTitle", "text": "Config Options" },
+        { "type": "keyValue", "key": "EnableFeature", "value": "true/false — Toggles the main feature." },
+        { "type": "keyValue", "key": "SpawnRate", "value": "1-100 — How often things spawn per day." },
+        { "type": "divider", "style": "dotted" },
+        { "type": "paragraph", "text": "Edit config.json in the mod folder, or use Generic Mod Config Menu." }
+      ]
+    },
+    {
+      "name": "Recipes",
+      "entries": [
+        { "type": "sectionTitle", "text": "Crafting Recipes" },
+        {
+          "type": "image",
+          "texture": "assets/item_icon.png",
+          "scale": 3,
+          "align": "right",
+          "items": [
+            "Requires: 5x Wood, 2x Iron Bar",
+            "Unlocked at Farming Level 6",
+            "Crafted at the workbench"
+          ]
+        },
+        { "type": "divider", "style": "iconCentered" },
+        { "type": "orderedList", "items": [
+          "Gather the required materials.",
+          "Open your crafting menu.",
+          "Select the recipe and craft."
+        ]}
+      ]
+    }
+  ]
+}

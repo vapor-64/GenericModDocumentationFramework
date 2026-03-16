@@ -1,0 +1,11 @@
+.idea/
+.vs/
+bin/
+obj/
+build/
+
+*.user
+*.DotSettings.user
+
+__pycache__/
+*.pyc

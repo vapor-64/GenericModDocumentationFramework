@@ -1,0 +1,12 @@
+{
+  "ui.title":              "Mod Documentation",
+  "ui.no-mods-sidebar":   "No mods registered.",
+  "ui.no-mods-content":   "No mods have registered any documentation.",
+
+  "hud-button.tooltip":         "Open Mod Documentation",
+
+  "gmcm.keybind-name":          "Open Documentation Menu",
+  "gmcm.keybind-tooltip":       "The key to open the in-game mod documentation viewer. Default: F2",
+  "gmcm.show-button-name":      "Show HUD Button",
+  "gmcm.show-button-tooltip":   "Show a clickable button in the top-left corner of the screen as an alternative to the keybind."
+}

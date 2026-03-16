@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <RootNamespace>GenericModDocumentationFramework</RootNamespace>
+        <AssemblyName>GenericModDocumentationFramework</AssemblyName>
+        <GamePath>E:\SteamLibrary\steamapps\common\Stardew Valley</GamePath>
+        <DeployPath>$(GamePath)\Mods\GenericModDocumentationFramework</DeployPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="Stardew Valley">
+            <HintPath>$(GamePath)\Stardew Valley.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="StardewModdingAPI">
+            <HintPath>$(GamePath)\StardewModdingAPI.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="SMAPI.Toolkit.CoreInterfaces">
+            <HintPath>$(GamePath)\smapi-internal\SMAPI.Toolkit.CoreInterfaces.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="MonoGame.Framework">
+            <HintPath>$(GamePath)\MonoGame.Framework.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="xTile">
+            <HintPath>$(GamePath)\xTile.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <!-- Exclude non-source folders from compilation -->
+    <ItemGroup>
+        <Compile Remove="_deprecated\**" />
+        <None Remove="_deprecated\**" />
+        <Compile Remove="tools\**" />
+        <None Remove="tools\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <I18nFiles   Include="i18n\**\*.*"   />
+        <AssetFiles  Include="assets\**\*.*" />
+    </ItemGroup>
+
+    <!-- Exclude non-source JSON files -->
+    <ItemGroup>
+        <None Remove="documentation.schema.json" />
+        <None Remove="example-documentation.json" />
+    </ItemGroup>
+
+    <Target Name="DeployMod" AfterTargets="Build">
+        <MakeDir Directories="$(DeployPath)" />
+        <MakeDir Directories="$(DeployPath)\assets" />
+        <MakeDir Directories="$(DeployPath)\i18n" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(DeployPath)" />
+        <Copy SourceFiles="manifest.json"                    DestinationFolder="$(DeployPath)" />
+        <Copy SourceFiles="@(I18nFiles)"
+              DestinationFiles="@(I18nFiles->'$(DeployPath)\i18n\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy SourceFiles="@(AssetFiles)"
+              DestinationFiles="@(AssetFiles->'$(DeployPath)\assets\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+
+</Project>

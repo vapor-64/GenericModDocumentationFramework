@@ -1,0 +1,286 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/vapor64/GMDF/documentation.schema.json",
+  "title": "GMDF Documentation",
+  "description": "Schema for Generic Mod Documentation Framework documentation files. Place as 'documentation.json' in your mod's root folder.",
+  "type": "object",
+  "required": ["format", "modName"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON schema reference for IDE validation."
+    },
+    "format": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Must be 1."
+    },
+    "modName": {
+      "type": "string",
+      "description": "Display name shown in the documentation menu sidebar. Supports i18n token {{key}} syntax."
+    },
+    "pages": {
+      "type": "array",
+      "description": "Documentation pages. If omitted or empty, an empty 'Overview' page is shown.",
+      "items": { "$ref": "#/$defs/page" }
+    }
+  },
+  "$defs": {
+    "page": {
+      "type": "object",
+      "required": ["name", "entries"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique page identifier. Auto-generated from name if omitted."
+        },
+        "name": {
+          "type": "string",
+          "description": "Tab label displayed for this page. Supports i18n tokens."
+        },
+        "headerImage": { "$ref": "#/$defs/imageRef" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entry" }
+        }
+      }
+    },
+    "entry": {
+      "oneOf": [
+        { "$ref": "#/$defs/sectionTitle" },
+        { "$ref": "#/$defs/paragraph" },
+        { "$ref": "#/$defs/caption" },
+        { "$ref": "#/$defs/image" },
+        { "$ref": "#/$defs/list" },
+        { "$ref": "#/$defs/orderedList" },
+        { "$ref": "#/$defs/keyValue" },
+        { "$ref": "#/$defs/divider" },
+        { "$ref": "#/$defs/spacer" },
+        { "$ref": "#/$defs/spoiler" },
+        { "$ref": "#/$defs/link" },
+        { "$ref": "#/$defs/row" },
+        { "$ref": "#/$defs/gif" }
+      ]
+    },
+    "alignEnum": {
+      "type": "string",
+      "enum": ["left", "center", "right"],
+      "description": "Horizontal alignment. Default varies by entry type."
+    },
+    "sectionTitle": {
+      "type": "object",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "sectionTitle" },
+        "text": { "type": "string", "description": "Title text. Supports i18n tokens." },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "paragraph": {
+      "type": "object",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "paragraph" },
+        "text": { "type": "string", "description": "Body text. Supports i18n tokens and \\n for line breaks." },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "caption": {
+      "type": "object",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "caption" },
+        "text": { "type": "string", "description": "Small muted text. Default alignment is center." },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: center." }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["type", "texture"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "image" },
+        "texture": { "type": "string", "description": "Asset path relative to the mod folder, e.g. 'assets/screenshot.png'." },
+        "sourceRect": { "$ref": "#/$defs/rect" },
+        "scale": { "type": "number", "default": 2, "description": "Pixel scale multiplier. Supports fractional values." },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left. When left or right with items, creates a two-column float layout." },
+        "items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional bullet list items displayed alongside the image. Only used when align is 'left' or 'right'."
+        }
+      }
+    },
+    "list": {
+      "type": "object",
+      "required": ["type", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "list" },
+        "items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Bulleted list items. Each supports i18n tokens."
+        },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "orderedList": {
+      "type": "object",
+      "required": ["type", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "orderedList" },
+        "items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Numbered list items."
+        },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "keyValue": {
+      "type": "object",
+      "required": ["type", "key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "keyValue" },
+        "key": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "divider": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "divider" },
+        "style": {
+          "type": "string",
+          "enum": ["single", "double", "dotted", "iconCentered"],
+          "default": "single"
+        }
+      }
+    },
+    "spacer": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "spacer" },
+        "height": { "type": "integer", "default": 16, "minimum": 1 }
+      }
+    },
+    "spoiler": {
+      "type": "object",
+      "required": ["type", "label", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "spoiler" },
+        "label": { "type": "string", "description": "Clickable header label text. Supports i18n tokens." },
+        "text": { "type": "string", "description": "Hidden content revealed on click. Supports i18n tokens." }
+      }
+    },
+    "link": {
+      "type": "object",
+      "required": ["type", "text", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "link" },
+        "text": { "type": "string", "description": "Visible link label. Supports i18n tokens." },
+        "url": { "type": "string", "description": "URL opened in the system browser on click." },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "row": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "row" },
+        "left": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entry" },
+          "description": "Entries in the left column."
+        },
+        "right": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entry" },
+          "description": "Entries in the right column."
+        },
+        "leftFraction": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0.05,
+          "maximum": 0.95,
+          "description": "Fraction of width given to the left column (0.05–0.95)."
+        }
+      }
+    },
+    "gif": {
+      "type": "object",
+      "required": ["type", "texture", "frameCount"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "gif" },
+        "texture": {
+          "type": "string",
+          "description": "Asset path (relative to mod folder) of the horizontal sprite sheet, e.g. 'assets/anim.png'."
+        },
+        "frameCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of equally-sized frames laid out horizontally in the sprite sheet."
+        },
+        "frameDuration": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0.016,
+          "description": "Time in seconds each frame is displayed before advancing. Default: 0.1 (10 fps)."
+        },
+        "scale": {
+          "type": "number",
+          "default": 1,
+          "description": "Pixel scale multiplier applied to a single frame. Supports fractional values."
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of columns in the sprite sheet grid. Omit (or set 0) for a single-row horizontal strip."
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Number of rows in the sprite sheet grid. Only needed when columns is also set."
+        },
+        "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "imageRef": {
+      "type": "object",
+      "required": ["texture"],
+      "additionalProperties": false,
+      "properties": {
+        "texture": { "type": "string" },
+        "sourceRect": { "$ref": "#/$defs/rect" }
+      }
+    },
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
+      }
+    }
+  }
+}

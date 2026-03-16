@@ -5,6 +5,10 @@
 <h1 align="center">Generic Mod Documentation Framework</h1>
 
 <p align="center">
+  <img src="assets/demo.gif" alt="GMDF Demo" />
+</p>
+
+<p align="center">
   An in-game documentation viewer for Stardew Valley mods.
 </p>
 

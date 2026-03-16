@@ -1,69 +1,100 @@
 {
   "$schema": "https://raw.githubusercontent.com/vapor64/GMDF/master/documentation.schema.json",
   "format": 1,
-  "modName": "{{modName}}",
+  "modName": "Sample Documentation",
   "pages": [
     {
-      "name": "{{page.overview}}",
+      "name": "Overview",
       "headerImage": {
-        "texture": "assets/banner.png"
+        "texture": "header.png"
       },
       "entries": [
-        { "type": "sectionTitle", "text": "{{section.welcome}}" },
-        { "type": "paragraph", "text": "{{desc.intro}}" },
-        { "type": "divider" },
-        { "type": "sectionTitle", "text": "Features" },
-        { "type": "list", "items": [
-          "Feature one description",
-          "Feature two description",
-          "Feature three description"
-        ]},
-        { "type": "spacer", "height": 8 },
-        { "type": "image", "texture": "assets/screenshot.png", "scale": 1.5, "align": "center" },
-        { "type": "caption", "text": "An example screenshot showing the feature in action." },
-        { "type": "spacer", "height": 12 },
         {
-          "type": "gif",
-          "texture": "assets/animation.png",
-          "frameCount": 8,
-          "frameDuration": 0.1,
-          "scale": 2,
-          "align": "center"
+          "type": "divider",
+          "style": "iconCentered"
         },
-        { "type": "caption", "text": "Animated preview (sprite sheet with 8 horizontal frames)." }
-      ]
-    },
-    {
-      "name": "Configuration",
-      "entries": [
-        { "type": "sectionTitle", "text": "Config Options" },
-        { "type": "keyValue", "key": "EnableFeature", "value": "true/false — Toggles the main feature." },
-        { "type": "keyValue", "key": "SpawnRate", "value": "1-100 — How often things spawn per day." },
-        { "type": "divider", "style": "dotted" },
-        { "type": "paragraph", "text": "Edit config.json in the mod folder, or use Generic Mod Config Menu." }
-      ]
-    },
-    {
-      "name": "Recipes",
-      "entries": [
-        { "type": "sectionTitle", "text": "Crafting Recipes" },
         {
-          "type": "image",
-          "texture": "assets/item_icon.png",
-          "scale": 3,
-          "align": "right",
-          "items": [
-            "Requires: 5x Wood, 2x Iron Bar",
-            "Unlocked at Farming Level 6",
-            "Crafted at the workbench"
+          "type": "row",
+          "left": [
+            {
+              "type": "sectionTitle",
+              "text": "Overview"
+            },
+            {
+              "type": "paragraph",
+              "text": "Lorem ipsum dolor [276] sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco [(BC)64] laboris nisi ut aliquip ex ea commodo consequat."
+            },
+            {
+              "type": "list",
+              "items": [
+                "Lorem ipsum dolor sit amet",
+                "consectetur adipiscing elit"
+              ]
+            }
+          ],
+          "right": [
+            {
+              "type": "gif",
+              "align": "right",
+              "texture": "pennygif.png",
+              "scale": 0.6,
+              "frameCount": 31,
+              "frameDuration": 0.02,
+              "columns": 6,
+              "rows": 6
+            }
+          ],
+          "leftFraction": 0.7
+        },
+        {
+          "type": "divider",
+          "style": "dotted"
+        },
+        {
+          "type": "row",
+          "left": [
+            {
+              "type": "image",
+              "texture": "sample.png",
+              "scale": 0.3
+            }
+          ],
+          "right": [
+            {
+              "type": "orderedList",
+              "items": [
+                "Lorem ipsum dolor sit amet consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+                "Lorem ipsum dolor sit amet consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+                "labore et dolore magna aliqua[(O)215] Lorem ipsum dolor sit amet consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
+              ]
+            }
+          ],
+          "leftFraction": 0.25
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "row",
+          "left": [
+            {
+              "type": "spoiler",
+              "text": "\"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\""
+            }
+          ],
+          "right": [
+            {
+              "type": "keyValue",
+              "key": "Lorem ",
+              "value": "ipsum "
+            },
+            {
+              "type": "keyValue",
+              "key": "[(BC)7]",
+              "value": "[(O)2]"
+            }
           ]
-        },
-        { "type": "divider", "style": "iconCentered" },
-        { "type": "orderedList", "items": [
-          "Gather the required materials.",
-          "Open your crafting menu.",
-          "Select the recipe and craft."
-        ]}
+        }
       ]
     }
   ]

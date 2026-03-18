@@ -8,5 +8,11 @@
   "EntryDll": "GenericModDocumentationFramework.dll",
   "MinimumApiVersion": "4.1",
   "MinimumGameVersion": "1.6.0",
-  "UpdateKeys": []
+  "UpdateKeys": ["Nexus:43733"],
+  "Dependencies": [
+    {
+      "UniqueID": "spacechase0.GenericModConfigMenu",
+      "IsRequired": false
+    }
+  ]
 }

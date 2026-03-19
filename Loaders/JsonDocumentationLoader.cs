@@ -70,8 +70,7 @@ namespace GenericModDocumentationFramework.Loaders
                         continue;
                     }
 
-                    ITranslationHelper? modI18n = GetModTranslations(modInfo);
-                    monitor.Log("[GMDF] i18n for '" + modInfo.Manifest.UniqueID + "': " + (modI18n == null ? "NULL - tags will not resolve" : "OK type=" + modI18n.GetType().Name), LogLevel.Warn);
+                    ITranslationHelper? modI18n = GetModTranslations(modInfo, modDir, frameworkHelper, monitor);
 
                     var doc = BuildDocumentation(data, modDir, modI18n, modInfo.Manifest.UniqueID, monitor);
 
@@ -370,8 +369,13 @@ namespace GenericModDocumentationFramework.Loaders
             return null;
         }
 
-        private static ITranslationHelper? GetModTranslations(IModInfo modInfo)
+        private static ITranslationHelper? GetModTranslations(
+            IModInfo    modInfo,
+            string?     modDir,
+            IModHelper  frameworkHelper,
+            IMonitor    monitor)
         {
+            // Fast path: C# SMAPI mods expose their ITranslationHelper directly.
             try
             {
                 if (modInfo is IMod imod)
@@ -391,6 +395,31 @@ namespace GenericModDocumentationFramework.Loaders
             }
             catch { }
 
+            // Fallback for non-C# mods (e.g. Content Patcher): create a temporary
+            // content pack pointed at the mod's directory so SMAPI loads its i18n/
+            // folder the normal way and gives us an ITranslationHelper.
+            if (modDir != null && Directory.Exists(Path.Combine(modDir, "i18n")))
+            {
+                try
+                {
+                    var pack = frameworkHelper.ContentPacks.CreateTemporary(
+                        directoryPath: modDir,
+                        id:            $"gmdf.i18n.{modInfo.Manifest.UniqueID}",
+                        name:          modInfo.Manifest.Name,
+                        description:   "GMDF i18n proxy",
+                        author:        modInfo.Manifest.Author,
+                        version:       modInfo.Manifest.Version);
+
+                    monitor.Log($"[GMDF] '{modInfo.Manifest.UniqueID}': using temporary content pack for i18n.", LogLevel.Debug);
+                    return pack.Translation;
+                }
+                catch (Exception ex)
+                {
+                    monitor.Log($"[GMDF] '{modInfo.Manifest.UniqueID}': failed to create i18n proxy: {ex.Message}", LogLevel.Warn);
+                }
+            }
+
+            monitor.Log($"[GMDF] '{modInfo.Manifest.UniqueID}': no i18n available — {{{{key}}}} tokens will not resolve.", LogLevel.Debug);
             return null;
         }
     }

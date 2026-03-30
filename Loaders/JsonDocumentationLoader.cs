@@ -128,7 +128,7 @@ namespace GenericModDocumentationFramework.Loaders
                     Rectangle? srcRect = ToRect(hiData.SourceRect);
 
                     page.HeaderImage = new HeaderImageEntry(
-                        () => LoadTextureFromDisk(texPath, monitor, modId),
+                        MakeTextureLoader(texPath, monitor, modId),
                         srcRect
                     );
                 }
@@ -183,7 +183,7 @@ namespace GenericModDocumentationFramework.Loaders
                     }
 
                     return new ImageEntry(
-                        () => LoadTextureFromDisk(texPath, monitor, modId),
+                        MakeTextureLoader(texPath, monitor, modId),
                         ToRect(data.SourceRect),
                         data.Scale,
                         align,
@@ -248,7 +248,7 @@ namespace GenericModDocumentationFramework.Loaders
                     string texPath = Path.Combine(modDir, data.Texture!);
 
                     return new GifEntry(
-                        () => LoadTextureFromDisk(texPath, monitor, modId),
+                        MakeTextureLoader(texPath, monitor, modId),
                         data.FrameCount,
                         data.FrameDuration,
                         data.Scale,
@@ -331,16 +331,29 @@ namespace GenericModDocumentationFramework.Loaders
 
         private static Texture2D LoadTextureFromDisk(string absolutePath, IMonitor monitor, string modId)
         {
-            try
+            using var stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read);
+            return Texture2D.FromStream(StardewValley.Game1.graphics.GraphicsDevice, stream);
+        }
+
+        private static Func<Texture2D> MakeTextureLoader(string absolutePath, IMonitor monitor, string modId)
+        {
+            bool logged = false;
+            return () =>
             {
-                using var stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read);
-                return Texture2D.FromStream(StardewValley.Game1.graphics.GraphicsDevice, stream);
-            }
-            catch (Exception ex)
-            {
-                monitor.Log($"[GMDF] '{modId}': Failed to load texture '{absolutePath}': {ex.Message}", LogLevel.Error);
-                throw;
-            }
+                try
+                {
+                    return LoadTextureFromDisk(absolutePath, monitor, modId);
+                }
+                catch (Exception ex)
+                {
+                    if (!logged)
+                    {
+                        monitor.Log($"[GMDF] '{modId}': Failed to load texture '{absolutePath}': {ex.Message}", LogLevel.Error);
+                        logged = true;
+                    }
+                    throw;
+                }
+            };
         }
 
         private static string? GetModDirectory(IModInfo modInfo)

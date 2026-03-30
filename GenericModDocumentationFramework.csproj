@@ -6,7 +6,8 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <RootNamespace>GenericModDocumentationFramework</RootNamespace>
         <AssemblyName>GenericModDocumentationFramework</AssemblyName>
-        <GamePath>E:\SteamLibrary\steamapps\common\Stardew Valley</GamePath>
+        <PlatformTarget>x64</PlatformTarget>
+        <GamePath>C:\Program Files (x86)\Steam\steamapps\common\Stardew Valley</GamePath>
         <DeployPath>$(GamePath)\Mods\GenericModDocumentationFramework</DeployPath>
     </PropertyGroup>
 
@@ -62,6 +63,9 @@
               DestinationFiles="@(I18nFiles->'$(DeployPath)\i18n\%(RecursiveDir)%(Filename)%(Extension)')" />
         <Copy SourceFiles="@(AssetFiles)"
               DestinationFiles="@(AssetFiles->'$(DeployPath)\assets\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy SourceFiles="documentation.json"
+              DestinationFolder="$(DeployPath)"
+              Condition="Exists('documentation.json')" />
     </Target>
 
 </Project>

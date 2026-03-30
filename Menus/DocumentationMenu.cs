@@ -241,14 +241,11 @@ namespace GenericModDocumentationFramework.Menus
 
         private int MeasureHeaderImageHeight(HeaderImageEntry entry)
         {
-            try
-            {
-                var tex  = entry.GetTexture();
-                var rect = entry.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
-                if (rect.Width == 0) return 0;
-                return (int)(_contentBounds.Width * ((float)rect.Height / rect.Width));
-            }
-            catch { return 0; }
+            var tex = entry.TryGetTexture();
+            if (tex == null) return 0;
+            var rect = entry.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
+            if (rect.Width == 0) return 0;
+            return (int)(_contentBounds.Width * ((float)rect.Height / rect.Width));
         }
 
         private int MeasureEntryHeight(IDocumentationEntry entry, int maxWidth)
@@ -289,38 +286,37 @@ namespace GenericModDocumentationFramework.Menus
 
         private int MeasureImageHeight(ImageEntry entry, int maxWidth)
         {
-            try
+            var tex = entry.TryGetTexture();
+            if (tex == null) return 0;
+
+            var src  = entry.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
+            int imgH = (int)Math.Round(src.Height * entry.Scale);
+
+            if (!entry.HasFloatLayout)
+                return imgH;
+
+            int imgW     = (int)Math.Round(src.Width * entry.Scale);
+            int listW    = maxWidth - imgW - ImageEntry.Gutter;
+            int lineH    = _smallFontLineH + 2;
+            int indented = Math.Max(1, listW - ImageEntry.BulletIndent);
+
+            int listH = 0;
+            for (int i = 0; i < entry.Items!.Count; i++)
             {
-                var tex = entry.GetTexture();
-                var src = entry.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
-                int imgH = (int)Math.Round(src.Height * entry.Scale);
-
-                if (!entry.HasFloatLayout)
-                    return imgH;
-
-                int imgW     = (int)Math.Round(src.Width * entry.Scale);
-                int listW    = maxWidth - imgW - ImageEntry.Gutter;
-                int lineH    = _smallFontLineH + 2;
-                int indented = Math.Max(1, listW - ImageEntry.BulletIndent);
-
-                int listH = 0;
-                for (int i = 0; i < entry.Items!.Count; i++)
-                {
-                    int lc = WrapRich(entry.Items[i](), Game1.smallFont, indented).Count;
-                    listH += Math.Max(1, lc) * lineH;
-                    if (i < entry.Items.Count - 1)
-                        listH += ListItemGap;
-                }
-
-                return Math.Max(imgH, listH);
+                int lc = WrapRich(entry.Items[i](), Game1.smallFont, indented).Count;
+                listH += Math.Max(1, lc) * lineH;
+                if (i < entry.Items.Count - 1)
+                    listH += ListItemGap;
             }
-            catch { return 0; }
+
+            return Math.Max(imgH, listH);
         }
 
         private int MeasureGifHeight(GifEntry entry)
         {
-            try   { return entry.GetScaledSize().h; }
-            catch { return 0; }
+            var tex = entry.TryGetTexture();
+            if (tex == null) return 0;
+            return entry.GetScaledSize().h;
         }
 
         private static int MeasureDividerHeight(DividerEntry entry) => entry.Style switch
@@ -516,14 +512,13 @@ namespace GenericModDocumentationFramework.Menus
             {
                 if (y + _headerImageHeight > _contentBounds.Y && y < _contentBounds.Bottom)
                 {
-                    try
+                    var hi  = _selectedPage.HeaderImage;
+                    var tex = hi.TryGetTexture();
+                    if (tex != null)
                     {
-                        var hi  = _selectedPage.HeaderImage;
-                        var tex = hi.GetTexture();
                         var src = hi.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
                         b.Draw(tex, new Rectangle(_contentBounds.X, y, _contentBounds.Width, _headerImageHeight), src, Color.White);
                     }
-                    catch { }
                 }
                 y += _headerImageHeight + Padding / 2;
             }
@@ -642,16 +637,15 @@ namespace GenericModDocumentationFramework.Menus
                         DrawFloatImage(b, e, x, ref y, maxWidth, font, cachedH);
                     else
                     {
-                        try
+                        var tex = e.TryGetTexture();
+                        if (tex != null)
                         {
-                            var tex  = e.GetTexture();
                             var src  = e.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
                             int dstW = (int)Math.Round(src.Width  * e.Scale);
                             int dstH = (int)Math.Round(src.Height * e.Scale);
                             float drawX = ComputeAlignedX(x, maxWidth, dstW, e.Alignment);
                             b.Draw(tex, new Rectangle((int)drawX, y, dstW, dstH), src, Color.White);
                         }
-                        catch { }
                         y += cachedH;
                     }
                     break;
@@ -758,16 +752,15 @@ namespace GenericModDocumentationFramework.Menus
 
                 case EntryType.Gif:
                 {
-                    var e = (GifEntry)entry;
-                    try
+                    var e   = (GifEntry)entry;
+                    var tex = e.TryGetTexture();
+                    if (tex != null)
                     {
-                        var tex          = e.GetTexture();
                         var src          = e.GetFrameRect(e.CurrentFrame);
                         var (dstW, dstH) = e.GetScaledSize();
                         float drawX      = ComputeAlignedX(x, maxWidth, dstW, e.Alignment);
                         b.Draw(tex, new Rectangle((int)drawX, y, dstW, dstH), src, Color.White);
                     }
-                    catch { }
                     y += entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureGifHeight(e);
                     break;
                 }
@@ -801,9 +794,9 @@ namespace GenericModDocumentationFramework.Menus
 
         private void DrawFloatImage(SpriteBatch b, ImageEntry e, int x, ref int y, int maxWidth, SpriteFont font, int cachedH)
         {
-            try
+            var tex = e.TryGetTexture();
+            if (tex != null)
             {
-                var tex  = e.GetTexture();
                 var src  = e.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
                 int imgW = (int)Math.Round(src.Width  * e.Scale);
                 int imgH = (int)Math.Round(src.Height * e.Scale);
@@ -839,7 +832,6 @@ namespace GenericModDocumentationFramework.Menus
                         listY += ListItemGap;
                 }
             }
-            catch { }
 
             y += cachedH;
         }
@@ -855,11 +847,9 @@ namespace GenericModDocumentationFramework.Menus
 
             b.Draw(Game1.fadeToBlackRect, headerRect, hovered ? SpoilerHeaderBgHover : SpoilerHeaderBg);
 
-            string arrow = e.IsRevealed ? "▼" : "►";
             string label = e.GetLabel();
             float  textY = y + (SpoilerEntry.HeaderHeight - _smallFontLineH) / 2f;
-            Utility.drawTextWithShadow(b, arrow, font, new Vector2(x + 8,  textY), Color.White);
-            Utility.drawTextWithShadow(b, label, font, new Vector2(x + 28, textY), Color.White);
+            Utility.drawTextWithShadow(b, label, font, new Vector2(x + 8, textY), Color.White);
 
             y += SpoilerEntry.HeaderHeight;
 
@@ -1006,33 +996,65 @@ namespace GenericModDocumentationFramework.Menus
                 var entries = _selectedPage.Entries;
                 for (int i = 0; i < entries.Count; i++)
                 {
-                    if (entries[i] is SpoilerEntry spoiler)
-                    {
-                        var headerRect = new Rectangle(mxPad, cy, mw, SpoilerEntry.HeaderHeight);
-                        if (headerRect.Contains(x, y))
-                        {
-                            spoiler.IsRevealed = !spoiler.IsRevealed;
-                            Game1.playSound("smallSelect");
-                            MeasureContentHeight();
-                            return;
-                        }
-                    }
-                    else if (entries[i] is LinkEntry link)
-                    {
-                        string label = link.GetLabel();
-                        float  tw    = Game1.smallFont.MeasureString(label).X;
-                        float  lx    = ComputeAlignedX(mxPad, mw, tw, link.Alignment);
-                        var    rect  = new Rectangle((int)lx, cy, (int)tw, _smallFontLineH);
-                        if (rect.Contains(x, y))
-                        {
-                            link.Open();
-                            Game1.playSound("smallSelect");
-                            return;
-                        }
-                    }
+                    if (HitTestEntry(entries[i], x, y, mxPad, cy, mw, _entryHeights[i]))
+                        return;
                     cy += _entryHeights[i] + Padding / 2;
                 }
             }
+        }
+
+        private bool HitTestEntry(IDocumentationEntry entry, int x, int y, int ex, int ey, int ew, int eh)
+        {
+            if (entry is SpoilerEntry spoiler)
+            {
+                var headerRect = new Rectangle(ex, ey, ew, SpoilerEntry.HeaderHeight);
+                if (headerRect.Contains(x, y))
+                {
+                    spoiler.IsRevealed = !spoiler.IsRevealed;
+                    Game1.playSound("smallSelect");
+                    MeasureContentHeight();
+                    return true;
+                }
+            }
+            else if (entry is LinkEntry link)
+            {
+                string label = link.GetLabel();
+                float  tw    = Game1.smallFont.MeasureString(label).X;
+                float  lx    = ComputeAlignedX(ex, ew, tw, link.Alignment);
+                var    rect  = new Rectangle((int)lx, ey, (int)tw, _smallFontLineH);
+                if (rect.Contains(x, y))
+                {
+                    link.Open();
+                    Game1.playSound("smallSelect");
+                    return true;
+                }
+            }
+            else if (entry is RowEntry row)
+            {
+                int leftW  = (int)Math.Round(ew * row.LeftFraction) - RowEntry.ColumnGap / 2;
+                int rightW = ew - leftW - RowEntry.ColumnGap;
+                int rightX = ex + leftW + RowEntry.ColumnGap;
+
+                int colY = ey;
+                for (int i = 0; i < row.LeftEntries.Count; i++)
+                {
+                    int subH = MeasureEntryHeight(row.LeftEntries[i], leftW);
+                    if (HitTestEntry(row.LeftEntries[i], x, y, ex, colY, leftW, subH))
+                        return true;
+                    colY += subH + Padding / 2;
+                }
+
+                colY = ey;
+                for (int i = 0; i < row.RightEntries.Count; i++)
+                {
+                    int subH = MeasureEntryHeight(row.RightEntries[i], rightW);
+                    if (HitTestEntry(row.RightEntries[i], x, y, rightX, colY, rightW, subH))
+                        return true;
+                    colY += subH + Padding / 2;
+                }
+            }
+
+            return false;
         }
 
         public override void receiveScrollWheelAction(int direction)

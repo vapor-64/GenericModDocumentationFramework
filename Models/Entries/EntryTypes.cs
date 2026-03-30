@@ -71,6 +71,7 @@ namespace GenericModDocumentationFramework.Models.Entries
     {
         private readonly Func<Texture2D> _getTexture;
         private Texture2D?               _cachedTexture;
+        private bool                     _loadFailed;
 
         public Rectangle? SourceRect { get; }
 
@@ -80,7 +81,13 @@ namespace GenericModDocumentationFramework.Models.Entries
             SourceRect  = sourceRect;
         }
 
-        public Texture2D GetTexture() => _cachedTexture ??= _getTexture();
+        public Texture2D? TryGetTexture()
+        {
+            if (_loadFailed)       return null;
+            if (_cachedTexture != null) return _cachedTexture;
+            try   { return _cachedTexture = _getTexture(); }
+            catch { _loadFailed = true; return null; }
+        }
     }
 
 
@@ -89,6 +96,7 @@ namespace GenericModDocumentationFramework.Models.Entries
     {
         private readonly Func<Texture2D> _getTexture;
         private Texture2D?               _cachedTexture;
+        private bool                     _loadFailed;
 
         public EntryType  Type       => EntryType.Image;
         public Alignment  Alignment  { get; }
@@ -113,7 +121,13 @@ namespace GenericModDocumentationFramework.Models.Entries
             Items       = items;
         }
 
-        public Texture2D GetTexture() => _cachedTexture ??= _getTexture();
+        public Texture2D? TryGetTexture()
+        {
+            if (_loadFailed)            return null;
+            if (_cachedTexture != null)  return _cachedTexture;
+            try   { return _cachedTexture = _getTexture(); }
+            catch { _loadFailed = true;  return null; }
+        }
 
         public bool HasFloatLayout => Items is { Count: > 0 } && Alignment is Alignment.Left or Alignment.Right;
     }
@@ -232,6 +246,7 @@ namespace GenericModDocumentationFramework.Models.Entries
     {
         private readonly Func<Texture2D> _getTexture;
         private Texture2D?               _cachedTexture;
+        private bool                     _loadFailed;
         private Rectangle[]?             _frames;
 
         public EntryType  Type          => EntryType.Gif;
@@ -273,7 +288,13 @@ namespace GenericModDocumentationFramework.Models.Entries
             }
         }
 
-        public Texture2D GetTexture() => _cachedTexture ??= _getTexture();
+        public Texture2D? TryGetTexture()
+        {
+            if (_loadFailed)            return null;
+            if (_cachedTexture != null)  return _cachedTexture;
+            try   { return _cachedTexture = _getTexture(); }
+            catch { _loadFailed = true;  return null; }
+        }
 
         public Rectangle GetFrameRect(int frameIndex)
         {
@@ -284,7 +305,7 @@ namespace GenericModDocumentationFramework.Models.Entries
 
         private void BuildFrames()
         {
-            var tex = GetTexture();
+            var tex = TryGetTexture()!;
             int fw  = tex.Width  / Columns;
             int fh  = tex.Height / Rows;
             _frames = new Rectangle[FrameCount];
@@ -298,7 +319,7 @@ namespace GenericModDocumentationFramework.Models.Entries
 
         public (int w, int h) GetScaledSize()
         {
-            var tex = GetTexture();
+            var tex = TryGetTexture()!;
             int fw  = tex.Width  / Columns;
             int fh  = tex.Height / Rows;
             return ((int)Math.Round(fw * Scale), (int)Math.Round(fh * Scale));

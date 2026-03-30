@@ -742,7 +742,9 @@ namespace GenericModDocumentationFramework.Menus
                     float  drawX = ComputeAlignedX(x, maxWidth, tw, e.Alignment);
                     var    rect  = new Rectangle((int)drawX, y, (int)tw, _smallFontLineH);
                     bool   hov   = rect.Contains(Game1.getMouseX(), Game1.getMouseY());
-                    Color  col   = hov ? LinkHoverColor : LinkColor;
+                    Color  col   = e.IsUrlSafe()
+                        ? (hov ? LinkHoverColor : LinkColor)
+                        : Color.Gray * 0.6f;
                     Utility.drawTextWithShadow(b, label, font, new Vector2(drawX, y), col);
                     b.Draw(Game1.fadeToBlackRect,
                         new Rectangle((int)drawX, y + _smallFontLineH - 1, (int)tw, 1), col);
@@ -1024,8 +1026,22 @@ namespace GenericModDocumentationFramework.Menus
                 var    rect  = new Rectangle((int)lx, ey, (int)tw, _smallFontLineH);
                 if (rect.Contains(x, y))
                 {
-                    link.Open();
+                    if (!link.IsUrlSafe())
+                    {
+                        Game1.playSound("cancel");
+                        return true;
+                    }
+
                     Game1.playSound("smallSelect");
+                    string message = _i18n.Get("ui.link-confirm", new { url = link.Url });
+                    Game1.activeClickableMenu = new ConfirmationDialog(message, _ =>
+                    {
+                        link.Open();
+                        Game1.activeClickableMenu = this;
+                    }, _ =>
+                    {
+                        Game1.activeClickableMenu = this;
+                    });
                     return true;
                 }
             }

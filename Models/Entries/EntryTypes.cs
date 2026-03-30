@@ -226,8 +226,17 @@ namespace GenericModDocumentationFramework.Models.Entries
             Alignment = alignment;
         }
 
+        /// <summary>Returns true if the URL uses an allowed scheme (https or http only).</summary>
+        public bool IsUrlSafe()
+        {
+            return Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                || Url.StartsWith("http://",  StringComparison.OrdinalIgnoreCase);
+        }
+
         public void Open()
         {
+            if (!IsUrlSafe()) return;
+
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

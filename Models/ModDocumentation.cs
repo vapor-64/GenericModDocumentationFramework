@@ -8,7 +8,10 @@ namespace GenericModDocumentationFramework.Models
     public class ModDocumentation
     {
 
-        public Func<string> GetName { get; }
+        public string      UniqueId { get; }
+
+
+        public Func<string> GetName  { get; }
 
 
         public DocumentationPage DefaultPage { get; } = new(null, () => "Overview");
@@ -22,9 +25,10 @@ namespace GenericModDocumentationFramework.Models
 
         private IReadOnlyList<DocumentationPage>? _allPagesCache;
 
-        public ModDocumentation(Func<string> getName)
+        public ModDocumentation(string uniqueId, Func<string> getName)
         {
-            GetName = getName;
+            UniqueId = uniqueId;
+            GetName  = getName;
         }
 
 

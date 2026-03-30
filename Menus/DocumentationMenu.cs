@@ -413,12 +413,33 @@ namespace GenericModDocumentationFramework.Menus
 
         private void DrawTitle(SpriteBatch b)
         {
-            string title = _i18n.Get("ui.title");
-            var    font  = Game1.dialogueFont;
-            var    size  = font.MeasureString(title);
-            float titleX = xPositionOnScreen + (width - size.X) / 2f;
-            float titleY = yPositionOnScreen + Padding + (60 - size.Y) / 2f;
-            Utility.drawTextWithShadow(b, title, font, new Vector2(titleX, titleY), Game1.textColor);
+            var   font      = Game1.dialogueFont;
+            float titleY    = yPositionOnScreen + Padding + (60 - font.MeasureString("A").Y) / 2f;
+            int   maxWidth  = width - Padding * 4;
+
+            string baseTitle = _i18n.Get("ui.title");
+
+            if (_selectedMod == null)
+            {
+                float baseW  = font.MeasureString(baseTitle).X;
+                float titleX = xPositionOnScreen + (width - baseW) / 2f;
+                Utility.drawTextWithShadow(b, baseTitle, font, new Vector2(titleX, titleY), Game1.textColor);
+                return;
+            }
+
+            const string separator = "  /  ";
+            float baseW2    = font.MeasureString(baseTitle).X;
+            float sepW      = font.MeasureString(separator).X;
+            float modBudget = maxWidth - baseW2 - sepW;
+            string modName  = TruncateWithEllipsis(_selectedMod.UniqueId, font, Math.Max(1, (int)modBudget));
+            float modW      = font.MeasureString(modName).X;
+
+            float totalW    = baseW2 + sepW + modW;
+            float startX    = xPositionOnScreen + (width - totalW) / 2f;
+
+            Utility.drawTextWithShadow(b, baseTitle, font, new Vector2(startX,             titleY), Game1.textColor);
+            Utility.drawTextWithShadow(b, separator, font, new Vector2(startX + baseW2,    titleY), Game1.textColor * 0.45f);
+            Utility.drawTextWithShadow(b, modName,   font, new Vector2(startX + baseW2 + sepW, titleY), Game1.textColor * 0.75f);
         }
 
         private void DrawSidebar(SpriteBatch b)

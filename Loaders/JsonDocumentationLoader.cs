@@ -100,7 +100,7 @@ namespace GenericModDocumentationFramework.Loaders
             IMonitor            monitor)
         {
             Func<string> getName = () => ResolveI18n(data.ModName, modI18n);
-            var doc = new ModDocumentation(getName);
+            var doc = new ModDocumentation(modId, getName);
 
             if (data.Pages == null || data.Pages.Count == 0)
                 return doc;

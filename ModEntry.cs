@@ -13,8 +13,10 @@ namespace GenericModDocumentationFramework
 {
     public class ModEntry : Mod
     {
-        private DocumentationRegistry _registry = null!;
-        private ModConfig             _config   = null!;
+        private DocumentationRegistry _registry           = null!;
+        private ModConfig             _config             = null!;
+        
+        private bool _mobilePhoneActive = false;
 
         private const int   IconSrcW      = 47;
         private const int   IconSrcH      = 33;
@@ -49,7 +51,46 @@ namespace GenericModDocumentationFramework
             RegisterWithGmcm();
             LoadButtonTexture();
 
+            // Mobile Phone integration: register as a phone app instead of using the HUD button.
+            // Must be called after LoadButtonTexture() so the texture is ready.
+            RegisterWithMobilePhone();
+
             JsonDocumentationLoader.DiscoverAndLoad(_registry, Helper, Monitor);
+        }
+
+        private void RegisterWithMobilePhone()
+        {
+            var mobileApi = Helper.ModRegistry.GetApi<IMobilePhoneApi>("aedenthorn.MobilePhone");
+            if (mobileApi is null) return;
+            
+            Texture2D appIcon;
+            try
+            {
+                appIcon = Helper.ModContent.Load<Texture2D>("assets/appIcon.png");
+                Monitor.Log("Loaded phone app icon from assets/appIcon.png.", LogLevel.Debug);
+            }
+            catch
+            {
+                appIcon = _buttonTexture ?? Game1.mouseCursors;
+                Monitor.Log("assets/appIcon.png not found — falling back to HUD button icon for phone app.", LogLevel.Warn);
+            }
+
+            bool success = mobileApi.AddApp(
+                id:     ModManifest.UniqueID,
+                name:   Helper.Translation.Get("hud-button.tooltip"),
+                action: OpenDocumentationMenu,
+                icon:   appIcon
+            );
+
+            if (success)
+            {
+                _mobilePhoneActive = true;
+                Monitor.Log("Registered as a Mobile Phone app. HUD button suppressed.", LogLevel.Info);
+            }
+            else
+            {
+                Monitor.Log("Mobile Phone mod found but AddApp() returned false. HUD button will be used instead.", LogLevel.Warn);
+            }
         }
 
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
@@ -220,6 +261,8 @@ namespace GenericModDocumentationFramework
 
         private bool IsHudButtonVisible()
         {
+            if (_mobilePhoneActive) return false;
+
             return _config.ShowHudButton
                 && Context.IsPlayerFree
                 && !Game1.eventUp

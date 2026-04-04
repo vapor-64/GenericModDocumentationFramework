@@ -1,0 +1,25 @@
+{
+  "ui.title":              "모드 문서",
+  "ui.no-mods-sidebar":   "등록된 모드가 없습니다.",
+  "ui.no-mods-content":   "문서를 등록한 모드가 없습니다.",
+
+  "hud-button.tooltip":         "모드 문서 열기",
+
+  "gmcm.keybind-name":          "문서 메뉴 열기",
+  "gmcm.keybind-tooltip":       "게임 내 모드 문서 뷰어를 여는 키입니다. 기본값: F2",
+  "gmcm.show-button-name":      "HUD 버튼 표시",
+  "gmcm.show-button-tooltip":   "키 대신 화면 좌측 상단에 클릭 가능한 버튼을 표시합니다.",
+
+  "gmcm.theme-section":              "외형",
+
+  "gmcm.accent-color-name":          "선택 항목 및 탭 색상",
+  "gmcm.accent-color-tooltip":       "좌측 패널에서 선택된 모드와 선택된 탭의 배경 색상입니다. 6자리 HEX 색상 코드를 입력하세요 (예: B14E05). 기본값: B14E05 (주황빛 갈색).",
+
+  "gmcm.border-color-name":          "콘텐츠 창 테두리 색상",
+  "gmcm.border-color-tooltip":       "문서 표시 영역을 둘러싼 굵은 테두리 색상입니다. 6자리 HEX 색상 코드를 입력하세요 (예: B48C50). 기본값: B48C50 (골든 베이지).",
+
+  "gmcm.scrollbar-color-name":       "스크롤바 색상",
+  "gmcm.scrollbar-color-tooltip":    "스크롤바 손잡이 색상입니다. 화살표 아이콘에는 적용되지 않습니다. 6자리 HEX 색상 코드를 입력하세요 (예: B48C50). 기본값: B48C50 (골든 베이지).",
+
+  "ui.link-confirm":            "이 링크를 브라우저에서 여시겠습니까?\n{{url}}"
+}

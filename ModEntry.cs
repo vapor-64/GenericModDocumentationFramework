@@ -138,6 +138,36 @@ namespace GenericModDocumentationFramework
                 name:     () => Helper.Translation.Get("gmcm.show-button-name"),
                 tooltip:  () => Helper.Translation.Get("gmcm.show-button-tooltip")
             );
+
+            // ── Appearance ───────────────────────────────────────────────────────
+            gmcm.AddSectionTitle(
+                mod:  ModManifest,
+                text: () => Helper.Translation.Get("gmcm.theme-section")
+            );
+
+            gmcm.AddTextOption(
+                mod:      ModManifest,
+                getValue: () => _config.AccentColor,
+                setValue: v  => _config.AccentColor = v,
+                name:     () => Helper.Translation.Get("gmcm.accent-color-name"),
+                tooltip:  () => Helper.Translation.Get("gmcm.accent-color-tooltip")
+            );
+
+            gmcm.AddTextOption(
+                mod:      ModManifest,
+                getValue: () => _config.ContentBorderColor,
+                setValue: v  => _config.ContentBorderColor = v,
+                name:     () => Helper.Translation.Get("gmcm.border-color-name"),
+                tooltip:  () => Helper.Translation.Get("gmcm.border-color-tooltip")
+            );
+
+            gmcm.AddTextOption(
+                mod:      ModManifest,
+                getValue: () => _config.ScrollBarColor,
+                setValue: v  => _config.ScrollBarColor = v,
+                name:     () => Helper.Translation.Get("gmcm.scrollbar-color-name"),
+                tooltip:  () => Helper.Translation.Get("gmcm.scrollbar-color-tooltip")
+            );
         }
 
         private void OnButtonsChanged(object? sender, ButtonsChangedEventArgs e)
@@ -204,7 +234,7 @@ namespace GenericModDocumentationFramework
                 Monitor.Log("No mods have registered documentation yet.", LogLevel.Info);
 
             var mods = _registry.GetAllMods();
-            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation);
+            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation, _config);
             Game1.playSound("bigSelect");
         }
     }

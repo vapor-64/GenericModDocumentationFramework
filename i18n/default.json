@@ -10,5 +10,16 @@
   "gmcm.show-button-name":      "Show HUD Button",
   "gmcm.show-button-tooltip":   "Show a clickable button in the top-left corner of the screen as an alternative to the keybind.",
 
+  "gmcm.theme-section":              "Appearance",
+
+  "gmcm.accent-color-name":          "Selected Item & Tab Color",
+  "gmcm.accent-color-tooltip":       "Background fill for the selected mod in the left pane and the selected page tab. Accepts a 6-digit hex color (e.g. B14E05). Default: B14E05 (orange-brown).",
+
+  "gmcm.border-color-name":          "Content Pane Border Color",
+  "gmcm.border-color-tooltip":       "Color of the thick border around the documentation viewing pane. Accepts a 6-digit hex color (e.g. B48C50). Default: B48C50 (golden tan).",
+
+  "gmcm.scrollbar-color-name":       "Scrollbar Color",
+  "gmcm.scrollbar-color-tooltip":    "Color of the scrollbar thumb. Does not affect the scroll arrow icons. Accepts a 6-digit hex color (e.g. B48C50). Default: B48C50 (golden tan).",
+
   "ui.link-confirm":            "Open this link in your browser?\n{{url}}"
 }

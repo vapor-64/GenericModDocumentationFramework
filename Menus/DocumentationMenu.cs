@@ -27,14 +27,20 @@ namespace GenericModDocumentationFramework.Menus
         private const float SmallFontNaturalPx    = 16f;
         private const float DialogueFontNaturalPx = 20f;
 
-        private static readonly Color SelectedModColor = new(177, 78, 5);
-        private static readonly Color HoverColor       = new(253, 182, 84);
-        private static readonly Color DividerColor     = new(180, 140, 80);
-        private static readonly Color KeyColor         = new(60, 60, 120);
-        private static readonly Color BorderColor      = new(180, 140, 80);
-        private static readonly Color CaptionColor     = new(80, 80, 80);
-        private static readonly Color LinkColor        = new(50, 80, 200);
-        private static readonly Color LinkHoverColor   = new(80, 120, 255);
+        // Hardcoded colors (not user-configurable).
+        private static readonly Color HoverColor        = new(253, 182, 84);
+        private static readonly Color DividerColor      = new(180, 140, 80);
+        private static readonly Color SectionTitleColor = new(177, 78,  5);
+        private static readonly Color KeyColor          = new(60,  60,  120);
+        private static readonly Color CaptionColor      = new(80,  80,  80);
+        private static readonly Color SpoilerHeaderColor= new(100, 70,  40);
+        private static readonly Color LinkColor         = new(50,  80,  200);
+        private static readonly Color LinkHoverColor    = new(80,  120, 255);
+
+        // User-configurable colors.
+        private Color _accentColor;
+        private Color _contentBorderColor;
+        private Color _scrollBarColor;
 
         private static readonly RasterizerState ScissorRasterizer =
             new() { ScissorTestEnable = true };
@@ -67,7 +73,7 @@ namespace GenericModDocumentationFramework.Menus
         private ClickableTextureComponent _scrollUpButton   = null!;
         private ClickableTextureComponent _scrollDownButton = null!;
 
-        public DocumentationMenu(IReadOnlyList<ModDocumentation> mods, ITranslationHelper i18n)
+        public DocumentationMenu(IReadOnlyList<ModDocumentation> mods, ITranslationHelper i18n, ModConfig config)
             : base(
                 x:      (int)(Game1.uiViewport.Width  * (1f - MenuScale) / 2f),
                 y:      (int)(Game1.uiViewport.Height * (1f - MenuScale) / 2f),
@@ -78,11 +84,16 @@ namespace GenericModDocumentationFramework.Menus
             _mods = mods;
             _i18n = i18n;
 
+            _accentColor        = ColorHelper.Parse(config.AccentColor,        new Color(177, 78,  5));
+            _contentBorderColor = ColorHelper.Parse(config.ContentBorderColor, new Color(180, 140, 80));
+            _scrollBarColor     = ColorHelper.Parse(config.ScrollBarColor,      new Color(180, 140, 80));
+
             CalculateBounds();
-            CreateScrollButtons();
 
             _smallFontLineH = (int)Game1.smallFont.MeasureString("A").Y;
             _titleFontLineH = (int)(Game1.dialogueFont.MeasureString("A").Y * SectionTitleScale);
+
+            CreateScrollButtons();
 
             if (_mods.Count > 0)
                 SelectMod(0);
@@ -437,8 +448,8 @@ namespace GenericModDocumentationFramework.Menus
             float totalW    = baseW2 + sepW + modW;
             float startX    = xPositionOnScreen + (width - totalW) / 2f;
 
-            Utility.drawTextWithShadow(b, baseTitle, font, new Vector2(startX,             titleY), Game1.textColor);
-            Utility.drawTextWithShadow(b, separator, font, new Vector2(startX + baseW2,    titleY), Game1.textColor * 0.45f);
+            Utility.drawTextWithShadow(b, baseTitle, font, new Vector2(startX,                 titleY), Game1.textColor);
+            Utility.drawTextWithShadow(b, separator, font, new Vector2(startX + baseW2,        titleY), Game1.textColor * 0.45f);
             Utility.drawTextWithShadow(b, modName,   font, new Vector2(startX + baseW2 + sepW, titleY), Game1.textColor * 0.75f);
         }
 
@@ -471,13 +482,15 @@ namespace GenericModDocumentationFramework.Menus
                     bool selected = i == _selectedModIndex;
                     bool hovered  = itemBounds.Contains(Game1.getMouseX(), Game1.getMouseY());
 
-                    if (selected)     b.Draw(Game1.fadeToBlackRect, itemBounds, SelectedModColor);
+                    if (selected)     b.Draw(Game1.fadeToBlackRect, itemBounds, _accentColor);
                     else if (hovered) b.Draw(Game1.fadeToBlackRect, itemBounds, HoverColor * 0.3f);
 
-                    var nameColor = selected ? Color.White : Game1.textColor;
                     string displayName = TruncateWithEllipsis(mod.GetName(), Game1.smallFont, itemBounds.Width - 24);
-                    Utility.drawTextWithShadow(b, displayName, Game1.smallFont,
-                        new Vector2(itemBounds.X + 12, itemBounds.Y + 8), nameColor);
+                    var namePos = new Vector2(itemBounds.X + 12, itemBounds.Y + 8);
+                    if (selected)
+                        b.DrawString(Game1.smallFont, displayName, namePos, Color.White);
+                    else
+                        Utility.drawTextWithShadow(b, displayName, Game1.smallFont, namePos, Game1.textColor);
 
                     b.Draw(Game1.fadeToBlackRect,
                         new Rectangle(itemBounds.X + 8, itemBounds.Bottom - 1, itemBounds.Width - 16, 1),
@@ -502,7 +515,7 @@ namespace GenericModDocumentationFramework.Menus
                 bool selected = page == _selectedPage;
                 bool hovered  = tabBounds.Contains(Game1.getMouseX(), Game1.getMouseY());
 
-                if (selected)     b.Draw(Game1.fadeToBlackRect, tabBounds, SelectedModColor);
+                if (selected)     b.Draw(Game1.fadeToBlackRect, tabBounds, _accentColor);
                 else if (hovered) b.Draw(Game1.fadeToBlackRect, tabBounds, HoverColor * 0.3f);
 
                 int    innerW    = tabBounds.Width - Padding * 2;
@@ -577,7 +590,7 @@ namespace GenericModDocumentationFramework.Menus
 
                 b.Draw(Game1.fadeToBlackRect,
                     new Rectangle(_scrollUpBounds.X + 10, thumbY, _scrollUpBounds.Width - 20, thumbHeight),
-                    DividerColor * 0.5f);
+                    _scrollBarColor);
             }
         }
 
@@ -585,10 +598,10 @@ namespace GenericModDocumentationFramework.Menus
         {
             var r = _contentBounds;
             int t = BorderThickness;
-            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Y,          r.Width, t),         BorderColor);
-            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Bottom - t, r.Width, t),         BorderColor);
-            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Y,          t,        r.Height), BorderColor);
-            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.Right - t, r.Y,          t,        r.Height), BorderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Y,          r.Width, t),         _contentBorderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Bottom - t, r.Width, t),         _contentBorderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,         r.Y,          t,        r.Height), _contentBorderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.Right - t, r.Y,          t,        r.Height), _contentBorderColor);
         }
 
         private void DrawEntry(SpriteBatch b, IDocumentationEntry entry, int entryIndex, int x, ref int y, int maxWidth, SpriteFont font)
@@ -618,7 +631,7 @@ namespace GenericModDocumentationFramework.Menus
                             }
                             else if (!string.IsNullOrEmpty(seg.Text))
                             {
-                                b.DrawString(Game1.dialogueFont, seg.Text, new Vector2(cx, y), SelectedModColor,
+                                b.DrawString(Game1.dialogueFont, seg.Text, new Vector2(cx, y), SectionTitleColor,
                                     rotation: 0f, origin: Vector2.Zero, scale: drawScale,
                                     effects: SpriteEffects.None, layerDepth: 0f);
                                 cx += Game1.dialogueFont.MeasureString(seg.Text).X * drawScale;
@@ -859,16 +872,17 @@ namespace GenericModDocumentationFramework.Menus
             y += cachedH;
         }
 
-        private static readonly Color SpoilerHeaderBg      = new(100, 70,  40);
-        private static readonly Color SpoilerHeaderBgHover = new(140, 100, 55);
-        private static readonly Color SpoilerContentBg     = new(245, 230, 200);
-
         private void DrawSpoiler(SpriteBatch b, SpoilerEntry e, int x, ref int y, int maxWidth, SpriteFont font)
         {
+            Color spoilerHover = new(
+                Math.Min(255, SpoilerHeaderColor.R + 40),
+                Math.Min(255, SpoilerHeaderColor.G + 30),
+                Math.Min(255, SpoilerHeaderColor.B + 15));
+
             var  headerRect = new Rectangle(x, y, maxWidth, SpoilerEntry.HeaderHeight);
             bool hovered    = headerRect.Contains(Game1.getMouseX(), Game1.getMouseY());
 
-            b.Draw(Game1.fadeToBlackRect, headerRect, hovered ? SpoilerHeaderBgHover : SpoilerHeaderBg);
+            b.Draw(Game1.fadeToBlackRect, headerRect, hovered ? spoilerHover : SpoilerHeaderColor);
 
             string label = e.GetLabel();
             float  textY = y + (SpoilerEntry.HeaderHeight - _smallFontLineH) / 2f;
@@ -885,7 +899,7 @@ namespace GenericModDocumentationFramework.Menus
 
                 b.Draw(Game1.fadeToBlackRect,
                     new Rectangle(x, y, maxWidth, contentH),
-                    SpoilerContentBg * 0.6f);
+                    new Color(245, 230, 200) * 0.6f);
 
                 int ty = y + 4;
                 DrawRichLines(b, lines, font, x + Padding, ref ty, innerW, Game1.textColor);

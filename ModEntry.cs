@@ -15,9 +15,7 @@ namespace GenericModDocumentationFramework
     {
         private DocumentationRegistry _registry           = null!;
         private ModConfig             _config             = null!;
-
-        /// <summary>True when the Mobile Phone mod is present and GMDF has registered as a phone app.
-        /// In this mode the HUD button is suppressed entirely.</summary>
+        
         private bool _mobilePhoneActive = false;
 
         private const int   IconSrcW      = 47;
@@ -64,9 +62,7 @@ namespace GenericModDocumentationFramework
         {
             var mobileApi = Helper.ModRegistry.GetApi<IMobilePhoneApi>("aedenthorn.MobilePhone");
             if (mobileApi is null) return;
-
-            // Load the dedicated 48x48 phone app icon.
-            // Falls back to the HUD button texture (or the mouse-cursor placeholder) if it is missing.
+            
             Texture2D appIcon;
             try
             {
@@ -265,7 +261,6 @@ namespace GenericModDocumentationFramework
 
         private bool IsHudButtonVisible()
         {
-            // If we're registered as a Mobile Phone app, never show the HUD button.
             if (_mobilePhoneActive) return false;
 
             return _config.ShowHudButton

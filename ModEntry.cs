@@ -266,6 +266,7 @@ namespace GenericModDocumentationFramework
             return _config.ShowHudButton
                 && Context.IsPlayerFree
                 && !Game1.eventUp
+                && !Game1.game1.takingMapScreenshot
                 && Game1.currentMinigame == null
                 && !Game1.freezeControls
                 && Game1.activeClickableMenu == null;

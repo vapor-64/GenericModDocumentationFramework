@@ -1,0 +1,25 @@
+{
+  "ui.title":              "Documentação do Mod",
+  "ui.no-mods-sidebar":   "Sem mods registrados.",
+  "ui.no-mods-content":   "Nenhum mod possui documentação registrada.",
+
+  "hud-button.tooltip":         "Abrir Documentação do Mod",
+
+  "gmcm.keybind-name":          "Abrir menu de Documentação",
+  "gmcm.keybind-tooltip":       "Tecla para abrir o visualizador de documentação de mods durante o jogo. Padrão: F2",
+  "gmcm.show-button-name":      "Mostrar Botão na Interface",
+  "gmcm.show-button-tooltip":   "Mostra um botão clicável no canto superior esquerdo da tela como alternativa ao atalho de teclado.",
+
+  "gmcm.theme-section":              "Aparência",
+
+  "gmcm.accent-color-name":          "Cor do Item e Guia Selecionado",
+  "gmcm.accent-color-tooltip":       "Cor de fundo para o mod selecionado no painel esquerdo e para a página selecionada. Aceita cores HEX de 6 caracteres (ex.: B14E05). Padrão: B14E05 (marrom escuro).",
+
+  "gmcm.border-color-name":          "Cor da Borda do Painel de Conteúdo",
+  "gmcm.border-color-tooltip":       "Cor da borda grossa em torno do painel de visualização de documentação. Aceita cores HEX de 6 caracteres (ex.: B48C50). Padrão: B48C50 (marrom claro).",
+
+  "gmcm.scrollbar-color-name":       "Cor da Barra de Rolagem",
+  "gmcm.scrollbar-color-tooltip":    "Cor do cursor da barra de rolagem. Não afeta os ícones das setas de rolagem. Aceita cores HEX de 6 caracteres (ex.: B48C50). Padrão: B48C50 (marrom claro).",
+
+  "ui.link-confirm":            "Abrir este link em seu navegador?\n{{url}}"
+}

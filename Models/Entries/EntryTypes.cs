@@ -337,6 +337,25 @@ namespace GenericModDocumentationFramework.Models.Entries
 
 
 
+    public class IndentBlockEntry : IDocumentationEntry
+    {
+        public EntryType Type => EntryType.IndentBlock;
+
+        public int IndentAmount { get; }
+
+        public const int ChildGap = 8;
+
+        public IReadOnlyList<IDocumentationEntry> Children { get; }
+
+        public IndentBlockEntry(IReadOnlyList<IDocumentationEntry> children, int indentAmount = 32)
+        {
+            Children     = children;
+            IndentAmount = Math.Max(0, indentAmount);
+        }
+    }
+
+
+
     public class RowEntry : IDocumentationEntry
     {
         public EntryType Type => EntryType.Row;

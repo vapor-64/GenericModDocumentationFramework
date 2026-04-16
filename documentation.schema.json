@@ -61,7 +61,8 @@
         { "$ref": "#/$defs/spoiler" },
         { "$ref": "#/$defs/link" },
         { "$ref": "#/$defs/row" },
-        { "$ref": "#/$defs/gif" }
+        { "$ref": "#/$defs/gif" },
+        { "$ref": "#/$defs/indentBlock" }
       ]
     },
     "alignEnum": {
@@ -260,6 +261,26 @@
           "description": "Number of rows in the sprite sheet grid. Only needed when columns is also set."
         },
         "align": { "$ref": "#/$defs/alignEnum", "description": "Default: left." }
+      }
+    },
+    "indentBlock": {
+      "type": "object",
+      "required": ["type", "entries"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "indentBlock" },
+        "indent": {
+          "type": "integer",
+          "default": 32,
+          "minimum": 0,
+          "description": "Left indent in pixels applied to all child entries. Default: 32."
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/entry" },
+          "description": "Child entries rendered with the indent applied."
+        }
       }
     },
     "imageRef": {

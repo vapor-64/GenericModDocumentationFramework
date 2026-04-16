@@ -49,6 +49,9 @@ namespace GenericModDocumentationFramework.Models.Json
         public List<EntryData>? Right        { get; set; }
         public double           LeftFraction { get; set; } = 0.5;
 
+        public List<EntryData>? Entries      { get; set; }
+        public int              Indent       { get; set; } = 32;
+
         public int    FrameCount    { get; set; } = 1;
         public double FrameDuration { get; set; } = 0.1;
         public int    Columns       { get; set; } = 0;

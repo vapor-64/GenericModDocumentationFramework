@@ -146,6 +146,10 @@ namespace GenericModDocumentationFramework.Menus
                     TickGifEntries(row.LeftEntries,  dt);
                     TickGifEntries(row.RightEntries, dt);
                 }
+                else if (entry is IndentBlockEntry indent)
+                {
+                    TickGifEntries(indent.Children, dt);
+                }
             }
         }
 
@@ -275,6 +279,7 @@ namespace GenericModDocumentationFramework.Menus
                 EntryType.Row          => MeasureRowHeight((RowEntry)entry, maxWidth),
                 EntryType.Link         => _smallFontLineH + 2,
                 EntryType.Gif          => MeasureGifHeight((GifEntry)entry),
+                EntryType.IndentBlock  => MeasureIndentBlockHeight((IndentBlockEntry)entry, maxWidth),
                 _                      => 0
             };
         }
@@ -382,6 +387,12 @@ namespace GenericModDocumentationFramework.Menus
             int leftH  = MeasureColumnHeight(entry.LeftEntries,  Math.Max(1, leftW));
             int rightH = MeasureColumnHeight(entry.RightEntries, Math.Max(1, rightW));
             return Math.Max(leftH, rightH);
+        }
+
+        private int MeasureIndentBlockHeight(IndentBlockEntry entry, int maxWidth)
+        {
+            int childWidth = Math.Max(1, maxWidth - entry.IndentAmount);
+            return MeasureColumnHeight(entry.Children, childWidth);
         }
 
         private int MeasureColumnHeight(IReadOnlyList<IDocumentationEntry> entries, int maxWidth)
@@ -800,6 +811,24 @@ namespace GenericModDocumentationFramework.Menus
                     y += entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureGifHeight(e);
                     break;
                 }
+
+                case EntryType.IndentBlock:
+                {
+                    var e          = (IndentBlockEntry)entry;
+                    int childX     = x + e.IndentAmount;
+                    int childWidth = maxWidth - e.IndentAmount;
+
+                    b.Draw(Game1.fadeToBlackRect,
+                        new Rectangle(x + e.IndentAmount / 2 - 1, y, 2, entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureIndentBlockHeight(e, maxWidth)),
+                        DividerColor * 0.35f);
+
+                    for (int i = 0; i < e.Children.Count; i++)
+                    {
+                        DrawEntry(b, e.Children[i], -1, childX, ref y, childWidth, font);
+                        if (i < e.Children.Count - 1) y += IndentBlockEntry.ChildGap;
+                    }
+                    break;
+                }
             }
         }
 
@@ -1102,6 +1131,19 @@ namespace GenericModDocumentationFramework.Menus
                     if (HitTestEntry(row.RightEntries[i], x, y, rightX, colY, rightW, subH))
                         return true;
                     colY += subH + Padding / 2;
+                }
+            }
+            else if (entry is IndentBlockEntry indentBlock)
+            {
+                int childX = ex + indentBlock.IndentAmount;
+                int childW = ew  - indentBlock.IndentAmount;
+                int colY   = ey;
+                for (int i = 0; i < indentBlock.Children.Count; i++)
+                {
+                    int subH = MeasureEntryHeight(indentBlock.Children[i], childW);
+                    if (HitTestEntry(indentBlock.Children[i], x, y, childX, colY, childW, subH))
+                        return true;
+                    colY += subH + IndentBlockEntry.ChildGap;
                 }
             }
 

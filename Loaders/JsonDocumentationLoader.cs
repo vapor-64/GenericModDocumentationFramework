@@ -282,6 +282,22 @@ namespace GenericModDocumentationFramework.Loaders
                     return new RowEntry(leftEntries, rightEntries, frac);
                 }
 
+                case "indentblock":
+                {
+                    if (data.Entries == null || data.Entries.Count == 0)
+                        return Warn("indentBlock: 'entries' is empty or missing");
+
+                    var children = new List<IDocumentationEntry>();
+                    foreach (var sub in data.Entries)
+                    {
+                        var built = BuildEntry(sub, modDir, modI18n, modId, monitor);
+                        if (built != null) children.Add(built);
+                    }
+
+                    int indent = data.Indent > 0 ? data.Indent : 32;
+                    return new IndentBlockEntry(children, indent);
+                }
+
                 default:
                     monitor.Log($"[GMDF] '{modId}': Unknown entry type '{data.Type}' — skipping.", LogLevel.Warn);
                     return null;

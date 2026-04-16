@@ -13,7 +13,8 @@ namespace GenericModDocumentationFramework.Models.Entries
         Spoiler,
         Row,
         Link,
-        Gif
+        Gif,
+        IndentBlock
     }
 
 

@@ -114,6 +114,7 @@ namespace GenericModDocumentationFramework.Loaders
                 if (data.Pages.Count == 1 && (pageData.Id == null || pageData.Id == "overview"))
                 {
                     page = doc.DefaultPage;
+                    page.GetPageName = getPageName;
                 }
                 else
                 {

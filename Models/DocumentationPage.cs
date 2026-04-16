@@ -11,7 +11,7 @@ namespace GenericModDocumentationFramework.Models
         public string? PageId { get; }
 
 
-        public Func<string> GetPageName { get; }
+        public Func<string> GetPageName { get; set; }
 
 
         public HeaderImageEntry? HeaderImage { get; set; }

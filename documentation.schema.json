@@ -275,6 +275,11 @@
           "minimum": 0,
           "description": "Left indent in pixels applied to all child entries. Default: 32."
         },
+        "showRule": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to draw the vertical rule line on the left of the indent block. Default: true."
+        },
         "entries": {
           "type": "array",
           "minItems": 1,

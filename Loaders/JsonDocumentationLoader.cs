@@ -295,7 +295,7 @@ namespace GenericModDocumentationFramework.Loaders
                     }
 
                     int indent = data.Indent > 0 ? data.Indent : 32;
-                    return new IndentBlockEntry(children, indent);
+                    return new IndentBlockEntry(children, indent, data.ShowRule);
                 }
 
                 default:

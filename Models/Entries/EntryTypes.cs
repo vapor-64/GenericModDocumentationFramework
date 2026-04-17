@@ -341,16 +341,18 @@ namespace GenericModDocumentationFramework.Models.Entries
     {
         public EntryType Type => EntryType.IndentBlock;
 
-        public int IndentAmount { get; }
+        public int  IndentAmount { get; }
+        public bool ShowRule     { get; }
 
         public const int ChildGap = 8;
 
         public IReadOnlyList<IDocumentationEntry> Children { get; }
 
-        public IndentBlockEntry(IReadOnlyList<IDocumentationEntry> children, int indentAmount = 32)
+        public IndentBlockEntry(IReadOnlyList<IDocumentationEntry> children, int indentAmount = 32, bool showRule = true)
         {
             Children     = children;
             IndentAmount = Math.Max(0, indentAmount);
+            ShowRule     = showRule;
         }
     }
 

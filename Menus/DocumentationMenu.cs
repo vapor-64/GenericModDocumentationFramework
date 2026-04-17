@@ -73,6 +73,8 @@ namespace GenericModDocumentationFramework.Menus
         private ClickableTextureComponent _scrollUpButton   = null!;
         private ClickableTextureComponent _scrollDownButton = null!;
 
+        private string? _tabHoverText;
+
         public DocumentationMenu(IReadOnlyList<ModDocumentation> mods, ITranslationHelper i18n, ModConfig config)
             : base(
                 x:      (int)(Game1.uiViewport.Width  * (1f - MenuScale) / 2f),
@@ -408,6 +410,8 @@ namespace GenericModDocumentationFramework.Menus
 
         public override void draw(SpriteBatch b)
         {
+            _tabHoverText = null;
+
             drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                 xPositionOnScreen, yPositionOnScreen, width, height, Color.White, drawShadow: true);
 
@@ -430,6 +434,10 @@ namespace GenericModDocumentationFramework.Menus
             }
 
             upperRightCloseButton?.draw(b);
+
+            if (_tabHoverText != null)
+                drawHoverText(b, _tabHoverText, Game1.smallFont);
+
             drawMouse(b);
         }
 
@@ -530,12 +538,16 @@ namespace GenericModDocumentationFramework.Menus
                 else if (hovered) b.Draw(Game1.fadeToBlackRect, tabBounds, HoverColor * 0.3f);
 
                 int    innerW    = tabBounds.Width - Padding * 2;
-                string tabLabel  = TruncateWithEllipsis(page.GetPageName(), Game1.smallFont, innerW);
+                string fullName  = page.GetPageName();
+                string tabLabel  = TruncateWithEllipsis(fullName, Game1.smallFont, innerW);
                 float  nameH     = Game1.smallFont.MeasureString(tabLabel).Y;
                 Color  txtColor  = selected ? Color.White : Game1.textColor;
                 b.DrawString(Game1.smallFont, tabLabel,
                     new Vector2(tabBounds.X + Padding, tabBounds.Y + (TabHeight - nameH) / 2f),
                     txtColor);
+
+                if (hovered && tabLabel != fullName)
+                    _tabHoverText = fullName;
             }
         }
 
@@ -818,9 +830,10 @@ namespace GenericModDocumentationFramework.Menus
                     int childX     = x + e.IndentAmount;
                     int childWidth = maxWidth - e.IndentAmount;
 
-                    b.Draw(Game1.fadeToBlackRect,
-                        new Rectangle(x + e.IndentAmount / 2 - 1, y, 2, entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureIndentBlockHeight(e, maxWidth)),
-                        DividerColor * 0.35f);
+                    if (e.ShowRule)
+                        b.Draw(Game1.fadeToBlackRect,
+                            new Rectangle(x + e.IndentAmount / 2 - 1, y, 2, entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureIndentBlockHeight(e, maxWidth)),
+                            DividerColor * 0.35f);
 
                     for (int i = 0; i < e.Children.Count; i++)
                     {

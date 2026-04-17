@@ -94,6 +94,44 @@
               "value": "[(O)2]"
             }
           ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "sectionTitle",
+          "text": "Indent Block"
+        },
+        {
+          "type": "paragraph",
+          "text": "With the vertical rule (default):"
+        },
+        {
+          "type": "indentBlock",
+          "entries": [
+            {
+              "type": "paragraph",
+              "text": "This block has showRule omitted, so the vertical rule is drawn on the left."
+            }
+          ]
+        },
+        {
+          "type": "spacer",
+          "height": 8
+        },
+        {
+          "type": "paragraph",
+          "text": "Without the vertical rule:"
+        },
+        {
+          "type": "indentBlock",
+          "showRule": false,
+          "entries": [
+            {
+              "type": "paragraph",
+              "text": "This block has showRule set to false, so only the indent is applied with no line drawn."
+            }
+          ]
         }
       ]
     }

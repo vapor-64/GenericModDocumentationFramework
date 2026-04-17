@@ -51,6 +51,7 @@ namespace GenericModDocumentationFramework.Models.Json
 
         public List<EntryData>? Entries      { get; set; }
         public int              Indent       { get; set; } = 32;
+        public bool             ShowRule     { get; set; } = true;
 
         public int    FrameCount    { get; set; } = 1;
         public double FrameDuration { get; set; } = 0.1;

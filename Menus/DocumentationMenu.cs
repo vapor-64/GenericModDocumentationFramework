@@ -26,8 +26,7 @@ namespace GenericModDocumentationFramework.Menus
 
         private const float SmallFontNaturalPx    = 16f;
         private const float DialogueFontNaturalPx = 20f;
-
-        // Hardcoded colors (not user-configurable).
+        
         private static readonly Color HoverColor        = new(253, 182, 84);
         private static readonly Color DividerColor      = new(180, 140, 80);
         private static readonly Color SectionTitleColor = new(177, 78,  5);
@@ -36,8 +35,7 @@ namespace GenericModDocumentationFramework.Menus
         private static readonly Color SpoilerHeaderColor= new(100, 70,  40);
         private static readonly Color LinkColor         = new(50,  80,  200);
         private static readonly Color LinkHoverColor    = new(80,  120, 255);
-
-        // User-configurable colors.
+        
         private Color _accentColor;
         private Color _contentBorderColor;
         private Color _scrollBarColor;
@@ -75,7 +73,10 @@ namespace GenericModDocumentationFramework.Menus
 
         private string? _tabHoverText;
 
-        public DocumentationMenu(IReadOnlyList<ModDocumentation> mods, ITranslationHelper i18n, ModConfig config)
+
+        private readonly bool _fontSettingsActive;
+
+        public DocumentationMenu(IReadOnlyList<ModDocumentation> mods, ITranslationHelper i18n, ModConfig config, bool fontSettingsActive)
             : base(
                 x:      (int)(Game1.uiViewport.Width  * (1f - MenuScale) / 2f),
                 y:      (int)(Game1.uiViewport.Height * (1f - MenuScale) / 2f),
@@ -83,8 +84,9 @@ namespace GenericModDocumentationFramework.Menus
                 height: (int)(Game1.uiViewport.Height * MenuScale),
                 showUpperRightCloseButton: true)
         {
-            _mods = mods;
-            _i18n = i18n;
+            _mods               = mods;
+            _i18n               = i18n;
+            _fontSettingsActive = fontSettingsActive;
 
             _accentColor        = ColorHelper.Parse(config.AccentColor,        new Color(177, 78,  5));
             _contentBorderColor = ColorHelper.Parse(config.ContentBorderColor, new Color(180, 140, 80));
@@ -210,13 +212,15 @@ namespace GenericModDocumentationFramework.Menus
             _selectedPage = _pages.Count > 0 ? _pages[0] : null;
 
             _tabBounds = new Rectangle[_pages.Count];
-            int tabX   = _tabsBounds.X;
+            int tabX = _tabsBounds.X;
+            float tabScale = _fontSettingsActive ? 1.025f : 1f;
+
             for (int i = 0; i < _pages.Count; i++)
             {
-                int naturalW   = (int)Game1.smallFont.MeasureString(_pages[i].GetPageName()).X + Padding * 2;
-                int maxTabW    = (int)(_tabsBounds.Width * 0.4f);
-                int w          = Math.Min(naturalW, maxTabW);
-                _tabBounds[i]  = new Rectangle(tabX, _tabsBounds.Y, w, TabHeight);
+                int naturalW = (int)((Game1.smallFont.MeasureString(_pages[i].GetPageName()).X + Padding * 2) * tabScale);
+                int maxTabW  = (int)(_tabsBounds.Width * 0.4f * tabScale);
+                int w        = Math.Min(naturalW, maxTabW);
+                _tabBounds[i] = new Rectangle(tabX, _tabsBounds.Y, w, TabHeight);
                 tabX += w + 4;
             }
 
@@ -536,7 +540,7 @@ namespace GenericModDocumentationFramework.Menus
 
                 if (selected)     b.Draw(Game1.fadeToBlackRect, tabBounds, _accentColor);
                 else if (hovered) b.Draw(Game1.fadeToBlackRect, tabBounds, HoverColor * 0.3f);
-
+                
                 int    innerW    = tabBounds.Width - Padding * 2;
                 string fullName  = page.GetPageName();
                 string tabLabel  = TruncateWithEllipsis(fullName, Game1.smallFont, innerW);

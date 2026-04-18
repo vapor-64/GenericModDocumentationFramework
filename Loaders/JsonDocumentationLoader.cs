@@ -405,7 +405,6 @@ namespace GenericModDocumentationFramework.Loaders
             IModHelper  frameworkHelper,
             IMonitor    monitor)
         {
-            // Fast path: C# SMAPI mods expose their ITranslationHelper directly.
             try
             {
                 if (modInfo is IMod imod)
@@ -424,10 +423,7 @@ namespace GenericModDocumentationFramework.Loaders
                 }
             }
             catch { }
-
-            // Fallback for non-C# mods (e.g. Content Patcher): create a temporary
-            // content pack pointed at the mod's directory so SMAPI loads its i18n/
-            // folder the normal way and gives us an ITranslationHelper.
+            
             if (modDir != null && Directory.Exists(Path.Combine(modDir, "i18n")))
             {
                 try

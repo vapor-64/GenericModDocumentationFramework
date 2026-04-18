@@ -16,7 +16,8 @@ namespace GenericModDocumentationFramework
         private DocumentationRegistry _registry           = null!;
         private ModConfig             _config             = null!;
         
-        private bool _mobilePhoneActive = false;
+        private bool _mobilePhoneActive  = false;
+        private bool _fontSettingsActive = false;
 
         private const int   IconSrcW      = 47;
         private const int   IconSrcH      = 33;
@@ -51,9 +52,11 @@ namespace GenericModDocumentationFramework
             RegisterWithGmcm();
             LoadButtonTexture();
 
-            // Mobile Phone integration: register as a phone app instead of using the HUD button.
-            // Must be called after LoadButtonTexture() so the texture is ready.
             RegisterWithMobilePhone();
+
+            _fontSettingsActive = Helper.ModRegistry.IsLoaded("Becks723.FontSettings");
+            if (_fontSettingsActive)
+                Monitor.Log("Font Settings mod detected — tab widths will be tripled to accommodate large fonts.", LogLevel.Debug);
 
             JsonDocumentationLoader.DiscoverAndLoad(_registry, Helper, Monitor);
         }
@@ -180,7 +183,7 @@ namespace GenericModDocumentationFramework
                 tooltip:  () => Helper.Translation.Get("gmcm.show-button-tooltip")
             );
 
-            // ── Appearance ───────────────────────────────────────────────────────
+
             gmcm.AddSectionTitle(
                 mod:  ModManifest,
                 text: () => Helper.Translation.Get("gmcm.theme-section")
@@ -278,7 +281,7 @@ namespace GenericModDocumentationFramework
                 Monitor.Log("No mods have registered documentation yet.", LogLevel.Info);
 
             var mods = _registry.GetAllMods();
-            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation, _config);
+            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation, _config, _fontSettingsActive);
             Game1.playSound("bigSelect");
         }
     }

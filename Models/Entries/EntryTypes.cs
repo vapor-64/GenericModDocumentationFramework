@@ -16,35 +16,37 @@ namespace GenericModDocumentationFramework.Models.Entries
 
 
 
-    public class SectionTitleEntry : IDocumentationEntry
+    public class SectionTitleEntry : IDocumentationEntry, IAnchorable
     {
         public EntryType    Type      => EntryType.SectionTitle;
         public Alignment    Alignment { get; }
         public Func<string> GetText   { get; }
-
         public int?         FontSize  { get; }
+        public string?      Anchor    { get; }
 
-        public SectionTitleEntry(Func<string> getText, Alignment alignment = Alignment.Left, int? fontSize = null)
+        public SectionTitleEntry(Func<string> getText, Alignment alignment = Alignment.Left, int? fontSize = null, string? anchor = null)
         {
             GetText   = getText;
             Alignment = alignment;
             FontSize  = fontSize;
+            Anchor    = anchor;
         }
     }
 
-    public class ParagraphEntry : IDocumentationEntry
+    public class ParagraphEntry : IDocumentationEntry, IAnchorable
     {
         public EntryType    Type      => EntryType.Paragraph;
         public Alignment    Alignment { get; }
         public Func<string> GetText   { get; }
-
         public int?         FontSize  { get; }
+        public string?      Anchor    { get; }
 
-        public ParagraphEntry(Func<string> getText, Alignment alignment = Alignment.Left, int? fontSize = null)
+        public ParagraphEntry(Func<string> getText, Alignment alignment = Alignment.Left, int? fontSize = null, string? anchor = null)
         {
             GetText   = getText;
             Alignment = alignment;
             FontSize  = fontSize;
+            Anchor    = anchor;
         }
     }
 
@@ -377,6 +379,50 @@ namespace GenericModDocumentationFramework.Models.Entries
             LeftEntries  = leftEntries;
             RightEntries = rightEntries;
             LeftFraction = Math.Clamp(leftFraction, 0.05, 0.95);
+        }
+    }
+
+
+
+    /// <summary>
+    /// A clickable link that navigates within the documentation viewer — to a specific
+    /// page (and optional anchor entry) of any installed mod's documentation.
+    /// </summary>
+    public class InternalLinkEntry : IDocumentationEntry
+    {
+        public EntryType    Type      => EntryType.InternalLink;
+        public Alignment    Alignment { get; }
+        public Func<string> GetLabel  { get; }
+
+        /// <summary>UniqueID of the mod that owns this entry. Used to resolve a null <see cref="TargetModId"/>.</summary>
+        public string  OwningModId  { get; }
+
+        /// <summary>UniqueID of the target mod, or null to target the same mod that owns this entry.</summary>
+        public string? TargetModId   { get; }
+
+        /// <summary>Page ID of the target page, or null to navigate to the mod's first page.</summary>
+        public string? TargetPageId  { get; }
+
+        /// <summary>Anchor ID of the specific entry to scroll to, or null to scroll to the top.</summary>
+        public string? TargetAnchor  { get; }
+
+        /// <summary>The resolved target mod UniqueID (falls back to <see cref="OwningModId"/> when <see cref="TargetModId"/> is null).</summary>
+        public string ResolvedModId => TargetModId ?? OwningModId;
+
+        public InternalLinkEntry(
+            Func<string> getLabel,
+            string       owningModId,
+            string?      targetModId,
+            string?      targetPageId,
+            string?      targetAnchor,
+            Alignment    alignment = Alignment.Left)
+        {
+            GetLabel     = getLabel;
+            OwningModId  = owningModId;
+            TargetModId  = targetModId;
+            TargetPageId = targetPageId;
+            TargetAnchor = targetAnchor;
+            Alignment    = alignment;
         }
     }
 }

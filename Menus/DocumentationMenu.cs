@@ -35,6 +35,8 @@ namespace GenericModDocumentationFramework.Menus
         private static readonly Color SpoilerHeaderColor= new(100, 70,  40);
         private static readonly Color LinkColor         = new(50,  80,  200);
         private static readonly Color LinkHoverColor    = new(80,  120, 255);
+        private static readonly Color InternalLinkColor      = new(30,  130,  60);
+        private static readonly Color InternalLinkHoverColor = new(50,  190,  90);
         
         private Color _accentColor;
         private Color _contentBorderColor;
@@ -206,6 +208,78 @@ namespace GenericModDocumentationFramework.Menus
             MeasureContentHeight();
         }
 
+        /// <summary>
+        /// Navigates the viewer to the specified mod, page, and optional anchor.
+        /// Any of the parameters may be null, in which case sensible defaults apply.
+        /// </summary>
+        private void NavigateTo(string resolvedModId, string? targetPageId, string? targetAnchor)
+        {
+            // Find mod index
+            int modIndex = -1;
+            for (int i = 0; i < _mods.Count; i++)
+            {
+                if (string.Equals(_mods[i].UniqueId, resolvedModId, StringComparison.OrdinalIgnoreCase))
+                {
+                    modIndex = i;
+                    break;
+                }
+            }
+
+            if (modIndex < 0)
+            {
+                // Target mod has no registered documentation — play a cancel sound and bail
+                Game1.playSound("cancel");
+                return;
+            }
+
+            // Switch mod if necessary
+            if (modIndex != _selectedModIndex)
+                SelectMod(modIndex);
+
+            // Switch page if a specific page was requested
+            if (targetPageId != null)
+            {
+                var targetDoc  = _mods[modIndex];
+                var targetPage = targetDoc.GetPage(targetPageId);
+                if (targetPage != null && targetPage != _selectedPage)
+                    SelectPage(targetPage);
+            }
+
+            // Scroll to anchor (MeasureContentHeight has already run inside SelectMod/SelectPage)
+            if (targetAnchor != null && _selectedPage != null)
+            {
+                int offset = ComputeAnchorScrollOffset(targetAnchor);
+                int maxScroll = Math.Max(0, _totalContentHeight - _contentBounds.Height + Padding);
+                _contentScrollOffset = Math.Clamp(offset, 0, maxScroll);
+            }
+
+            Game1.playSound("smallSelect");
+        }
+
+        /// <summary>
+        /// Returns the pixel Y offset (from the top of the content area) of the first entry
+        /// on the current page whose <see cref="IAnchorable.Anchor"/> matches <paramref name="anchor"/>.
+        /// Returns 0 if no match is found.
+        /// </summary>
+        private int ComputeAnchorScrollOffset(string anchor)
+        {
+            if (_selectedPage == null || _entryHeights.Length == 0) return 0;
+
+            int y = _headerImageHeight > 0 ? _headerImageHeight + Padding / 2 : 0;
+
+            var entries = _selectedPage.Entries;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i] is IAnchorable anchorable &&
+                    string.Equals(anchorable.Anchor, anchor, StringComparison.OrdinalIgnoreCase))
+                    return y;
+
+                y += _entryHeights[i] + Padding / 2;
+            }
+
+            return 0; // anchor not found — scroll to top
+        }
+
         private void RebuildPageState()
         {
             _pages        = _selectedMod?.GetAllPages() ?? Array.Empty<DocumentationPage>();
@@ -284,6 +358,7 @@ namespace GenericModDocumentationFramework.Menus
                 EntryType.Spoiler      => MeasureSpoilerHeight((SpoilerEntry)entry, maxWidth),
                 EntryType.Row          => MeasureRowHeight((RowEntry)entry, maxWidth),
                 EntryType.Link         => _smallFontLineH + 2,
+                EntryType.InternalLink => _smallFontLineH + 2,
                 EntryType.Gif          => MeasureGifHeight((GifEntry)entry),
                 EntryType.IndentBlock  => MeasureIndentBlockHeight((IndentBlockEntry)entry, maxWidth),
                 _                      => 0
@@ -813,6 +888,36 @@ namespace GenericModDocumentationFramework.Menus
                     break;
                 }
 
+                case EntryType.InternalLink:
+                {
+                    var    e     = (InternalLinkEntry)entry;
+                    string label = e.GetLabel();
+                    float  tw    = font.MeasureString(label).X;
+                    float  drawX = ComputeAlignedX(x, maxWidth, tw, e.Alignment);
+                    var    rect  = new Rectangle((int)drawX, y, (int)tw, _smallFontLineH);
+                    bool   hov   = rect.Contains(Game1.getMouseX(), Game1.getMouseY());
+
+                    // Grey out if the target mod has no registered documentation
+                    bool   exists = false;
+                    foreach (var m in _mods)
+                        if (string.Equals(m.UniqueId, e.ResolvedModId, StringComparison.OrdinalIgnoreCase))
+                            { exists = true; break; }
+
+                    Color col = exists
+                        ? (hov ? InternalLinkHoverColor : InternalLinkColor)
+                        : Color.Gray * 0.6f;
+
+                    Utility.drawTextWithShadow(b, label, font, new Vector2(drawX, y), col);
+                    b.Draw(Game1.fadeToBlackRect,
+                        new Rectangle((int)drawX, y + _smallFontLineH - 1, (int)tw, 1), col);
+
+                    if (hov && exists)
+                        _tabHoverText = BuildInternalLinkTooltip(e);
+
+                    y += _smallFontLineH + 2;
+                    break;
+                }
+
                 case EntryType.Gif:
                 {
                     var e   = (GifEntry)entry;
@@ -1126,6 +1231,18 @@ namespace GenericModDocumentationFramework.Menus
                     return true;
                 }
             }
+            else if (entry is InternalLinkEntry internalLink)
+            {
+                string label = internalLink.GetLabel();
+                float  tw    = Game1.smallFont.MeasureString(label).X;
+                float  lx    = ComputeAlignedX(ex, ew, tw, internalLink.Alignment);
+                var    rect  = new Rectangle((int)lx, ey, (int)tw, _smallFontLineH);
+                if (rect.Contains(x, y))
+                {
+                    NavigateTo(internalLink.ResolvedModId, internalLink.TargetPageId, internalLink.TargetAnchor);
+                    return true;
+                }
+            }
             else if (entry is RowEntry row)
             {
                 int leftW  = (int)Math.Round(ew * row.LeftFraction) - RowEntry.ColumnGap / 2;
@@ -1216,6 +1333,27 @@ namespace GenericModDocumentationFramework.Menus
             }
 
             return text.Substring(0, best) + ellipsis;
+        }
+
+        private string BuildInternalLinkTooltip(InternalLinkEntry e)
+        {
+            // Find the display name of the target mod (fall back to UniqueID if not in registry)
+            string modDisplay = e.ResolvedModId;
+            foreach (var m in _mods)
+                if (string.Equals(m.UniqueId, e.ResolvedModId, StringComparison.OrdinalIgnoreCase))
+                    { modDisplay = m.GetName(); break; }
+
+            // Build a human-readable destination string
+            if (e.TargetPageId == null && e.TargetAnchor == null)
+                return modDisplay;
+
+            if (e.TargetPageId != null && e.TargetAnchor == null)
+                return $"{modDisplay}  ›  {e.TargetPageId}";
+
+            if (e.TargetPageId == null)
+                return $"{modDisplay}  ›  #{e.TargetAnchor}";
+
+            return $"{modDisplay}  ›  {e.TargetPageId}  ›  #{e.TargetAnchor}";
         }
 
         private void DrawRichLines(

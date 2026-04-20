@@ -14,7 +14,8 @@ namespace GenericModDocumentationFramework.Models.Entries
         Row,
         Link,
         Gif,
-        IndentBlock
+        IndentBlock,
+        InternalLink
     }
 
 

@@ -25,6 +25,7 @@ namespace GenericModDocumentationFramework.Models.Json
         public string? Align { get; set; }
 
         public string? Text { get; set; }
+        public string? Anchor { get; set; }
 
         public int? FontSize { get; set; }
 
@@ -43,6 +44,10 @@ namespace GenericModDocumentationFramework.Models.Json
 
         public string? Url   { get; set; }
 
+        // Internal link fields
+        public string? Mod  { get; set; }
+        public string? Page { get; set; }
+        // Anchor is also used as a target id on anchorable entries (sectionTitle, paragraph)
         public string? Label { get; set; }
 
         public List<EntryData>? Left         { get; set; }

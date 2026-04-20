@@ -158,11 +158,11 @@ namespace GenericModDocumentationFramework.Loaders
             {
                 case "sectiontitle":
                     if (string.IsNullOrWhiteSpace(data.Text)) return Warn("sectionTitle missing 'text'");
-                    return new SectionTitleEntry(() => ResolveI18n(data.Text!, modI18n), align, data.FontSize);
+                    return new SectionTitleEntry(() => ResolveI18n(data.Text!, modI18n), align, data.FontSize, data.Anchor);
 
                 case "paragraph":
                     if (string.IsNullOrWhiteSpace(data.Text)) return Warn("paragraph missing 'text'");
-                    return new ParagraphEntry(() => ResolveI18n(data.Text!, modI18n), align, data.FontSize);
+                    return new ParagraphEntry(() => ResolveI18n(data.Text!, modI18n), align, data.FontSize, data.Anchor);
 
                 case "caption":
                     if (string.IsNullOrWhiteSpace(data.Text)) return Warn("caption missing 'text'");
@@ -241,6 +241,25 @@ namespace GenericModDocumentationFramework.Loaders
                         data.Url!,
                         align
                     );
+
+                case "internallink":
+                {
+                    if (string.IsNullOrWhiteSpace(data.Text)) return Warn("internalLink missing 'text'");
+                    // At least one of mod, page, or anchor must be provided to be useful
+                    if (string.IsNullOrWhiteSpace(data.Mod) &&
+                        string.IsNullOrWhiteSpace(data.Page) &&
+                        string.IsNullOrWhiteSpace(data.Anchor))
+                        return Warn("internalLink must specify at least one of 'mod', 'page', or 'anchor'");
+
+                    return new InternalLinkEntry(
+                        () => ResolveI18n(data.Text!, modI18n),
+                        modId,
+                        string.IsNullOrWhiteSpace(data.Mod)    ? null : data.Mod,
+                        string.IsNullOrWhiteSpace(data.Page)   ? null : data.Page,
+                        string.IsNullOrWhiteSpace(data.Anchor) ? null : data.Anchor,
+                        align
+                    );
+                }
 
                 case "gif":
                 {

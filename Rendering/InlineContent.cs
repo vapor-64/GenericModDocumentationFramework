@@ -36,8 +36,12 @@ namespace GenericModDocumentationFramework.Rendering
 
     public static class InlineParser
     {
+        // Matches inline item sprite tokens only: [128] or [(O)128] or [(BC)12] etc.
+        // The item ID must be numeric — this deliberately excludes word-based tokenizable
+        // string tokens like [FarmName] or [FarmerName], which are resolved earlier by
+        // TokenParser and should never reach this stage as raw bracket text.
         private static readonly Regex TokenPattern =
-            new(@"\[(\([A-Za-z]+\))?([A-Za-z0-9_]+)\]", RegexOptions.Compiled);
+            new(@"\[(\([A-Za-z]+\))?(\d+)\]", RegexOptions.Compiled);
 
         public static List<List<InlineSegment>> WrapRich(
             string text, SpriteFont font, int maxWidth, int spriteSize)

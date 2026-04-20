@@ -11,6 +11,7 @@ using GenericModDocumentationFramework.Registry;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using StardewValley.TokenizableStrings;
 
 namespace GenericModDocumentationFramework.Loaders
 {
@@ -331,17 +332,42 @@ namespace GenericModDocumentationFramework.Loaders
 
         private static string ResolveI18n(string text, ITranslationHelper? i18n)
         {
-            if (i18n == null) return text;
-
-            return I18nTokenPattern.Replace(text, match =>
+            // Step 1 — resolve {{i18n:key}} / {{key}} SMAPI translation tokens.
+            if (i18n != null)
             {
-                string raw = match.Groups[1].Value;
-                string key = raw.StartsWith("i18n:", StringComparison.OrdinalIgnoreCase)
-                    ? raw.Substring(5)
-                    : raw;
-                var translation = i18n.Get(key.Trim());
-                return translation.HasValue() ? translation.ToString() : match.Value;
-            });
+                text = I18nTokenPattern.Replace(text, match =>
+                {
+                    string raw = match.Groups[1].Value;
+                    string key = raw.StartsWith("i18n:", StringComparison.OrdinalIgnoreCase)
+                        ? raw.Substring(5)
+                        : raw;
+                    var translation = i18n.Get(key.Trim());
+                    return translation.HasValue() ? translation.ToString() : match.Value;
+                });
+            }
+
+            // Step 2 — resolve Stardew tokenizable strings, e.g.
+            //   [FarmName]  [PlayerName]  [LocalizedText Strings\File:Key]  [ItemName (O)128]
+            // These are only meaningful once a save is loaded and Game1.player exists.
+            // Because every text field is wrapped in a Func<string> invoked at render time,
+            // this executes after save-load — exactly when TokenParser needs its context.
+            if (text.Contains('[') && StardewValley.Game1.player != null)
+            {
+                try
+                {
+                    text = TokenParser.ParseText(
+                        text,
+                        random:       null,
+                        customParser: null,
+                        player:       StardewValley.Game1.player);
+                }
+                catch
+                {
+                    // Malformed token string — leave the text unchanged.
+                }
+            }
+
+            return text;
         }
 
         private static Alignment ParseAlignment(string? align) => align?.ToLowerInvariant() switch

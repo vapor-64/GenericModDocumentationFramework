@@ -5,6 +5,7 @@ using GenericModDocumentationFramework.Models.Entries;
 using GenericModDocumentationFramework.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -12,7 +13,7 @@ using StardewValley.Menus;
 namespace GenericModDocumentationFramework.Menus
 {
 
-    public class DocumentationMenu : IClickableMenu
+    public class DocumentationMenu : IClickableMenu, IKeyboardSubscriber
     {
         private const float MenuScale         = 0.9f;
         private const int   SidebarWidth      = 300;
@@ -23,6 +24,7 @@ namespace GenericModDocumentationFramework.Menus
         private const int   BorderThickness   = 8;
         private const float SectionTitleScale = 0.8f;
         private const int   ListItemGap       = 4;
+        private const int   SearchBarHeight   = 36;
 
         private const float SmallFontNaturalPx    = 16f;
         private const float DialogueFontNaturalPx = 20f;
@@ -75,6 +77,35 @@ namespace GenericModDocumentationFramework.Menus
 
         private string? _tabHoverText;
 
+        // ── Search bar ──────────────────────────────────────────────────────────
+        private string  _searchQuery      = string.Empty;
+        private double  _cursorBlinkTimer = 0.0;
+        private bool    _cursorVisible    = true;
+        private Rectangle _searchBarBounds;
+
+        /// <summary>
+        /// IKeyboardSubscriber.Selected — true while the search bar has keyboard focus.
+        /// Setting to true registers this menu with the game's keyboard dispatcher so
+        /// that RecieveTextInput / RecieveCommandInput are called by the engine.
+        /// </summary>
+        public bool Selected
+        {
+            get => _searchBarActive;
+            set
+            {
+                if (_searchBarActive == value) return;
+                _searchBarActive = value;
+                if (value)
+                    Game1.keyboardDispatcher.Subscriber = this;
+                else if (Game1.keyboardDispatcher.Subscriber == this)
+                    Game1.keyboardDispatcher.Subscriber = null;
+            }
+        }
+        private bool _searchBarActive;
+
+        /// <summary>The subset of <see cref="_mods"/> that match the current search query, in display order.</summary>
+        private List<ModDocumentation> _filteredMods = new();
+
 
         private readonly bool _fontSettingsActive;
 
@@ -101,8 +132,7 @@ namespace GenericModDocumentationFramework.Menus
 
             CreateScrollButtons();
 
-            if (_mods.Count > 0)
-                SelectMod(0);
+            RebuildFilter();
         }
 
         private (float drawScale, int lineH) SmallFontParams(int? fontSizeOverride, int defaultPx)
@@ -127,6 +157,17 @@ namespace GenericModDocumentationFramework.Menus
         public override void update(GameTime time)
         {
             base.update(time);
+
+            // Blink the search bar cursor.
+            if (Selected)
+            {
+                _cursorBlinkTimer += time.ElapsedGameTime.TotalSeconds;
+                if (_cursorBlinkTimer >= 0.53)
+                {
+                    _cursorBlinkTimer = 0.0;
+                    _cursorVisible    = !_cursorVisible;
+                }
+            }
 
             if (_selectedPage == null) return;
 
@@ -161,11 +202,20 @@ namespace GenericModDocumentationFramework.Menus
 
         private void CalculateBounds()
         {
-            _sidebarBounds = new Rectangle(
+            // The search bar sits at the very top of the sidebar column.
+            _searchBarBounds = new Rectangle(
                 xPositionOnScreen + Padding,
                 yPositionOnScreen + Padding + 60,
                 SidebarWidth,
-                height - Padding * 2 - 60
+                SearchBarHeight
+            );
+
+            // The scrollable mod list begins below the search bar.
+            _sidebarBounds = new Rectangle(
+                xPositionOnScreen + Padding,
+                _searchBarBounds.Bottom + Padding / 2,
+                SidebarWidth,
+                height - Padding * 2 - 60 - SearchBarHeight - Padding / 2
             );
 
             int contentX     = xPositionOnScreen + Padding + SidebarWidth + Padding;
@@ -191,11 +241,11 @@ namespace GenericModDocumentationFramework.Menus
                 _scrollDownBounds, Game1.mouseCursors, new Rectangle(421, 472, 11, 12), (float)ScrollButtonSize / 11);
         }
 
-        private void SelectMod(int index)
+        private void SelectMod(int filteredIndex)
         {
-            if (index < 0 || index >= _mods.Count) return;
-            _selectedModIndex    = index;
-            _selectedMod         = _mods[index];
+            if (filteredIndex < 0 || filteredIndex >= _filteredMods.Count) return;
+            _selectedModIndex    = filteredIndex;
+            _selectedMod         = _filteredMods[filteredIndex];
             _contentScrollOffset = 0;
             _selectedPage        = null;
             RebuildPageState();
@@ -214,32 +264,64 @@ namespace GenericModDocumentationFramework.Menus
         /// </summary>
         private void NavigateTo(string resolvedModId, string? targetPageId, string? targetAnchor)
         {
-            // Find mod index
-            int modIndex = -1;
-            for (int i = 0; i < _mods.Count; i++)
+            // Find the mod in the full list first
+            ModDocumentation? targetMod = null;
+            foreach (var m in _mods)
             {
-                if (string.Equals(_mods[i].UniqueId, resolvedModId, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(m.UniqueId, resolvedModId, StringComparison.OrdinalIgnoreCase))
                 {
-                    modIndex = i;
+                    targetMod = m;
                     break;
                 }
             }
 
-            if (modIndex < 0)
+            if (targetMod == null)
             {
                 // Target mod has no registered documentation — play a cancel sound and bail
                 Game1.playSound("cancel");
                 return;
             }
 
+            // If the target mod is filtered out, clear the search so it becomes visible
+            int filteredIndex = -1;
+            for (int i = 0; i < _filteredMods.Count; i++)
+            {
+                if (string.Equals(_filteredMods[i].UniqueId, resolvedModId, StringComparison.OrdinalIgnoreCase))
+                {
+                    filteredIndex = i;
+                    break;
+                }
+            }
+
+            if (filteredIndex < 0)
+            {
+                // Clear search so the target mod is visible, then rebuild
+                _searchQuery = string.Empty;
+                RebuildFilter();
+                for (int i = 0; i < _filteredMods.Count; i++)
+                {
+                    if (string.Equals(_filteredMods[i].UniqueId, resolvedModId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        filteredIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (filteredIndex < 0)
+            {
+                Game1.playSound("cancel");
+                return;
+            }
+
             // Switch mod if necessary
-            if (modIndex != _selectedModIndex)
-                SelectMod(modIndex);
+            if (filteredIndex != _selectedModIndex)
+                SelectMod(filteredIndex);
 
             // Switch page if a specific page was requested
             if (targetPageId != null)
             {
-                var targetDoc  = _mods[modIndex];
+                var targetDoc  = _filteredMods[filteredIndex];
                 var targetPage = targetDoc.GetPage(targetPageId);
                 if (targetPage != null && targetPage != _selectedPage)
                     SelectPage(targetPage);
@@ -278,6 +360,59 @@ namespace GenericModDocumentationFramework.Menus
             }
 
             return 0; // anchor not found — scroll to top
+        }
+
+        /// <summary>
+        /// Rebuilds <see cref="_filteredMods"/> from the full mod list using the current
+        /// <see cref="_searchQuery"/>, then keeps the selected mod selected if it still
+        /// appears in the results, or auto-selects the first result otherwise.
+        /// </summary>
+        private void RebuildFilter()
+        {
+            // Remember which mod was selected before the filter changed.
+            var previouslySelected = _selectedMod;
+
+            _filteredMods.Clear();
+            _sidebarScrollOffset = 0;
+
+            if (string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                // No filter — show everything.
+                foreach (var m in _mods)
+                    _filteredMods.Add(m);
+            }
+            else
+            {
+                string q = _searchQuery.Trim();
+                foreach (var m in _mods)
+                {
+                    if (m.GetName().Contains(q, StringComparison.OrdinalIgnoreCase))
+                        _filteredMods.Add(m);
+                }
+            }
+
+            // Try to keep the previously-selected mod selected.
+            if (previouslySelected != null)
+            {
+                for (int i = 0; i < _filteredMods.Count; i++)
+                {
+                    if (string.Equals(_filteredMods[i].UniqueId, previouslySelected.UniqueId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _selectedModIndex = i;
+                        _selectedMod      = _filteredMods[i];
+                        // Page state is already correct — no need to rebuild.
+                        return;
+                    }
+                }
+            }
+
+            // Previously-selected mod is not in the filtered results — select first result.
+            _selectedMod  = null;
+            _selectedPage = null;
+            if (_filteredMods.Count > 0)
+                SelectMod(0);
+            else
+                _selectedModIndex = -1;
         }
 
         private void RebuildPageState()
@@ -495,10 +630,11 @@ namespace GenericModDocumentationFramework.Menus
                 xPositionOnScreen, yPositionOnScreen, width, height, Color.White, drawShadow: true);
 
             DrawTitle(b);
+            DrawSearchBar(b);
             DrawSidebar(b);
 
             b.Draw(Game1.fadeToBlackRect,
-                new Rectangle(_sidebarBounds.Right + Padding / 2, _sidebarBounds.Top, 2, _sidebarBounds.Height),
+                new Rectangle(_sidebarBounds.Right + Padding / 2, _searchBarBounds.Top, 2, _searchBarBounds.Height + Padding / 2 + _sidebarBounds.Height),
                 DividerColor * 0.5f);
 
             if (_selectedMod != null)
@@ -551,6 +687,76 @@ namespace GenericModDocumentationFramework.Menus
             Utility.drawTextWithShadow(b, modName,   font, new Vector2(startX + baseW2 + sepW, titleY), Game1.textColor * 0.75f);
         }
 
+        private void DrawSearchBar(SpriteBatch b)
+        {
+            var  r       = _searchBarBounds;
+            bool hovered = r.Contains(Game1.getMouseX(), Game1.getMouseY());
+
+            // Background — slightly lighter when active, subtle when idle.
+            Color bgColor = Selected
+                ? new Color(245, 235, 210) * 0.95f
+                : new Color(220, 200, 160) * 0.55f;
+            b.Draw(Game1.fadeToBlackRect, r, bgColor);
+
+            // Border — accent-tinted when active, muted otherwise.
+            Color borderColor = Selected ? _accentColor : DividerColor * 0.6f;
+            int   bt          = 2;
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,          r.Y,           r.Width, bt),         borderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,          r.Bottom - bt, r.Width, bt),         borderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.X,          r.Y,           bt,       r.Height),  borderColor);
+            b.Draw(Game1.fadeToBlackRect, new Rectangle(r.Right - bt, r.Y,           bt,       r.Height),  borderColor);
+
+            // Magnifier icon (using the Stardew cursors sprite).
+            const int   iconSize   = 20;
+            var         iconSrc    = new Rectangle(80, 0, 13, 13); // magnifier in mouseCursors
+            float       iconScale  = iconSize / 13f;
+            int         iconX      = r.X + 8;
+            int         iconY      = r.Y + (r.Height - iconSize) / 2;
+            b.Draw(Game1.mouseCursors, new Rectangle(iconX, iconY, iconSize, iconSize), iconSrc, Color.White * 0.7f);
+
+            // Text / placeholder.
+            int   textX    = iconX + iconSize + 6;
+            int   textMaxW = r.Right - textX - Padding;
+            float textY    = r.Y + (r.Height - _smallFontLineH) / 2f;
+
+            if (_searchQuery.Length == 0 && !Selected)
+            {
+                // Placeholder
+                string placeholder = _i18n.Get("ui.search-placeholder");
+                string clipped     = TruncateWithEllipsis(placeholder, Game1.smallFont, textMaxW);
+                b.DrawString(Game1.smallFont, clipped, new Vector2(textX, textY), Game1.textColor * 0.4f);
+            }
+            else
+            {
+                // Typed query + blinking cursor
+                string display = TruncateWithEllipsis(_searchQuery, Game1.smallFont, textMaxW - (Selected ? 10 : 0));
+                b.DrawString(Game1.smallFont, display, new Vector2(textX, textY), Game1.textColor);
+
+                if (Selected && _cursorVisible)
+                {
+                    float cursorX = textX + Game1.smallFont.MeasureString(display).X + 1;
+                    b.Draw(Game1.fadeToBlackRect,
+                        new Rectangle((int)cursorX, (int)textY + 2, 2, _smallFontLineH - 4),
+                        Game1.textColor * 0.85f);
+                }
+            }
+
+            // Clear button — only shown when there is text.
+            if (_searchQuery.Length > 0)
+            {
+                const int clearSize = 16;
+                int       clearX    = r.Right - clearSize - 6;
+                int       clearY    = r.Y + (r.Height - clearSize) / 2;
+                var       clearRect = new Rectangle(clearX, clearY, clearSize, clearSize);
+                bool      clearHov  = clearRect.Contains(Game1.getMouseX(), Game1.getMouseY());
+                b.Draw(Game1.fadeToBlackRect, clearRect, clearHov ? HoverColor * 0.6f : Color.Transparent);
+                // Draw an × using the small font.
+                b.DrawString(Game1.smallFont, "×",
+                    new Vector2(clearX + 2, clearY + (clearSize - _smallFontLineH) / 2f),
+                    clearHov ? Color.White : Game1.textColor * 0.55f);
+            }
+        }
+
         private void DrawSidebar(SpriteBatch b)
         {
             if (_mods.Count == 0)
@@ -558,6 +764,16 @@ namespace GenericModDocumentationFramework.Menus
                 Utility.drawTextWithShadow(b, _i18n.Get("ui.no-mods-sidebar"), Game1.smallFont,
                     new Vector2(_sidebarBounds.X + Padding, _sidebarBounds.Y + Padding),
                     Game1.textColor * 0.6f);
+                return;
+            }
+
+            // "No results" message when the search query matches nothing.
+            if (_filteredMods.Count == 0)
+            {
+                string noResults = _i18n.Get("ui.search-no-results");
+                Utility.drawTextWithShadow(b, noResults, Game1.smallFont,
+                    new Vector2(_sidebarBounds.X + Padding, _sidebarBounds.Y + Padding),
+                    Game1.textColor * 0.5f);
                 return;
             }
 
@@ -570,9 +786,9 @@ namespace GenericModDocumentationFramework.Menus
 
             int y = _sidebarBounds.Y - _sidebarScrollOffset;
 
-            for (int i = 0; i < _mods.Count; i++)
+            for (int i = 0; i < _filteredMods.Count; i++)
             {
-                var mod        = _mods[i];
+                var mod        = _filteredMods[i];
                 var itemBounds = new Rectangle(_sidebarBounds.X, y, _sidebarBounds.Width, SidebarItemHeight);
 
                 if (itemBounds.Bottom > _sidebarBounds.Y && itemBounds.Top < _sidebarBounds.Bottom)
@@ -1144,11 +1360,39 @@ namespace GenericModDocumentationFramework.Menus
             if (_scrollUpButton.containsPoint(x, y))  { ScrollContent(-120); Game1.playSound("shiny4"); return; }
             if (_scrollDownButton.containsPoint(x, y)) { ScrollContent( 120); Game1.playSound("shiny4"); return; }
 
+            // ── Search bar ──────────────────────────────────────────────────────
+            if (_searchBarBounds.Contains(x, y))
+            {
+                // Check clear button first (it sits inside _searchBarBounds).
+                if (_searchQuery.Length > 0)
+                {
+                    const int clearSize = 16;
+                    int       clearX    = _searchBarBounds.Right - clearSize - 6;
+                    int       clearY    = _searchBarBounds.Y + (_searchBarBounds.Height - clearSize) / 2;
+                    if (new Rectangle(clearX, clearY, clearSize, clearSize).Contains(x, y))
+                    {
+                        _searchQuery = string.Empty;
+                        RebuildFilter();
+                        Game1.playSound("drumkit6");
+                        return;
+                    }
+                }
+
+                Selected          = true;
+                _cursorBlinkTimer = 0.0;
+                _cursorVisible    = true;
+                Game1.playSound("smallSelect");
+                return;
+            }
+
+            // Clicking anywhere outside the search bar deactivates it.
+            Selected = false;
+
             if (_sidebarBounds.Contains(x, y))
             {
                 int relY  = y - _sidebarBounds.Y + _sidebarScrollOffset;
                 int index = relY / SidebarItemHeight;
-                if (index >= 0 && index < _mods.Count && index != _selectedModIndex)
+                if (index >= 0 && index < _filteredMods.Count && index != _selectedModIndex)
                 {
                     Game1.playSound("smallSelect");
                     SelectMod(index);
@@ -1284,13 +1528,87 @@ namespace GenericModDocumentationFramework.Menus
             return false;
         }
 
+        public override void receiveKeyPress(Keys key)
+        {
+            // While the search bar is active, suppress all key handling so SMAPI
+            // hotkeys and the default Escape-closes-menu behaviour don't fire.
+            // Actual text input arrives through the IKeyboardSubscriber methods.
+            if (Selected) return;
+
+            base.receiveKeyPress(key);
+        }
+
+        // ── IKeyboardSubscriber ───────────────────────────────────────────────
+
+        /// <summary>Called by the engine for printable characters typed while Selected is true.</summary>
+        public void RecieveTextInput(char inputChar)
+        {
+            if (!Selected || char.IsControl(inputChar)) return;
+            _searchQuery += inputChar;
+            RebuildFilter();
+            _cursorBlinkTimer = 0.0;
+            _cursorVisible    = true;
+        }
+
+        /// <summary>Called by the engine for pasted strings.</summary>
+        public void RecieveTextInput(string text)
+        {
+            if (!Selected || string.IsNullOrEmpty(text)) return;
+            foreach (char c in text)
+                if (!char.IsControl(c))
+                    _searchQuery += c;
+            RebuildFilter();
+            _cursorBlinkTimer = 0.0;
+            _cursorVisible    = true;
+        }
+
+        /// <summary>
+        /// Called by the engine for control characters: '\b' (backspace), '\r' (enter), '\t' (tab).
+        /// </summary>
+        public void RecieveCommandInput(char command)
+        {
+            if (!Selected) return;
+            switch (command)
+            {
+                case '\b': // Backspace
+                    if (_searchQuery.Length > 0)
+                    {
+                        _searchQuery = _searchQuery[..^1];
+                        RebuildFilter();
+                        _cursorBlinkTimer = 0.0;
+                        _cursorVisible    = true;
+                    }
+                    break;
+
+                case '\r': // Enter — dismiss the bar
+                    Selected = false;
+                    break;
+
+                case '\x1b': // Escape — clear query first, then dismiss
+                    if (_searchQuery.Length > 0)
+                    {
+                        _searchQuery = string.Empty;
+                        RebuildFilter();
+                        Game1.playSound("drumkit6");
+                    }
+                    else
+                    {
+                        Selected = false;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>Called by the engine for special keys (arrow keys, etc.) — unused.</summary>
+        public void RecieveSpecialInput(Keys key) { }
+
         public override void receiveScrollWheelAction(int direction)
         {
             int mx = Game1.getMouseX(), my = Game1.getMouseY();
 
             if (_sidebarBounds.Contains(mx, my))
             {
-                int maxSidebarScroll = Math.Max(0, _mods.Count * SidebarItemHeight - _sidebarBounds.Height);
+                int maxSidebarScroll = Math.Max(0, _filteredMods.Count * SidebarItemHeight - _sidebarBounds.Height);
                 _sidebarScrollOffset = Math.Clamp(_sidebarScrollOffset - direction / 3, 0, maxSidebarScroll);
             }
             else if (_contentBounds.Contains(mx, my))

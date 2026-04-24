@@ -21,5 +21,8 @@
   "gmcm.scrollbar-color-name":       "스크롤바 색상",
   "gmcm.scrollbar-color-tooltip":    "스크롤바 손잡이 색상입니다. 화살표 아이콘에는 적용되지 않습니다. 6자리 HEX 색상 코드를 입력하세요 (예: B48C50). 기본값: B48C50 (골든 베이지).",
 
-  "ui.link-confirm":            "이 링크를 브라우저에서 여시겠습니까?\n{{url}}"
+  "ui.link-confirm":            "이 링크를 브라우저에서 여시겠습니까?\n{{url}}",
+
+  "ui.search-placeholder":      "모드 검색...",
+  "ui.search-no-results":       "검색 결과가 없습니다."
 }

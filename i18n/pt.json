@@ -21,5 +21,8 @@
   "gmcm.scrollbar-color-name":       "Cor da Barra de Rolagem",
   "gmcm.scrollbar-color-tooltip":    "Cor do cursor da barra de rolagem. Não afeta os ícones das setas de rolagem. Aceita cores HEX de 6 caracteres (ex.: B48C50). Padrão: B48C50 (marrom claro).",
 
-  "ui.link-confirm":            "Abrir este link em seu navegador?\n{{url}}"
+  "ui.link-confirm":            "Abrir este link em seu navegador?\n{{url}}",
+
+  "ui.search-placeholder":      "Pesquisar mods...",
+  "ui.search-no-results":       "Nenhum mod encontrado."
 }

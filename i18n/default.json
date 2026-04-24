@@ -21,5 +21,8 @@
   "gmcm.scrollbar-color-name":       "Scrollbar Color",
   "gmcm.scrollbar-color-tooltip":    "Color of the scrollbar thumb. Does not affect the scroll arrow icons. Accepts a 6-digit hex color (e.g. B48C50). Default: B48C50 (golden tan).",
 
-  "ui.link-confirm":            "Open this link in your browser?\n{{url}}"
+  "ui.link-confirm":            "Open this link in your browser?\n{{url}}",
+
+  "ui.search-placeholder":      "Search mods...",
+  "ui.search-no-results":       "No mods match your search."
 }

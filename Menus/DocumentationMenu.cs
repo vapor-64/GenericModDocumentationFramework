@@ -522,10 +522,20 @@ namespace GenericModDocumentationFramework.Menus
             if (tex == null) return 0;
 
             var src  = entry.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
-            int imgH = (int)Math.Round(src.Height * entry.Scale);
+            if (src.Width == 0) return 0;
 
             if (!entry.HasFloatLayout)
-                return imgH;
+            {
+                // Clamp the scaled width to the available column width and derive
+                // the height proportionally so the image never overflows its container.
+                int scaledW = (int)Math.Round(src.Width  * entry.Scale);
+                int scaledH = (int)Math.Round(src.Height * entry.Scale);
+                if (scaledW > maxWidth)
+                    scaledH = (int)Math.Round(scaledH * ((double)maxWidth / scaledW));
+                return Math.Max(1, scaledH);
+            }
+
+            int imgH = (int)Math.Round(src.Height * entry.Scale);
 
             int imgW     = (int)Math.Round(src.Width * entry.Scale);
             int listW    = maxWidth - imgW - ImageEntry.Gutter;
@@ -993,10 +1003,19 @@ namespace GenericModDocumentationFramework.Menus
                         if (tex != null)
                         {
                             var src  = e.SourceRect ?? new Rectangle(0, 0, tex.Width, tex.Height);
-                            int dstW = (int)Math.Round(src.Width  * e.Scale);
-                            int dstH = (int)Math.Round(src.Height * e.Scale);
-                            float drawX = ComputeAlignedX(x, maxWidth, dstW, e.Alignment);
-                            b.Draw(tex, new Rectangle((int)drawX, y, dstW, dstH), src, Color.White);
+                            if (src.Width > 0)
+                            {
+                                // Clamp to column width, preserving aspect ratio.
+                                int dstW = (int)Math.Round(src.Width  * e.Scale);
+                                int dstH = (int)Math.Round(src.Height * e.Scale);
+                                if (dstW > maxWidth)
+                                {
+                                    dstH = (int)Math.Round(dstH * ((double)maxWidth / dstW));
+                                    dstW = maxWidth;
+                                }
+                                float drawX = ComputeAlignedX(x, maxWidth, dstW, e.Alignment);
+                                b.Draw(tex, new Rectangle((int)drawX, y, dstW, Math.Max(1, dstH)), src, Color.White);
+                            }
                         }
                         y += cachedH;
                     }
@@ -1254,6 +1273,18 @@ namespace GenericModDocumentationFramework.Menus
             string label = e.GetLabel();
             float  textY = y + (SpoilerEntry.HeaderHeight - _smallFontLineH) / 2f;
             Utility.drawTextWithShadow(b, label, font, new Vector2(x + 8, textY), Color.White);
+
+            // Arrow icon: up-arrow when revealed, down-arrow when collapsed.
+            // Reuses the same cursor sprite-sheet source rects as the scroll buttons.
+            const int ArrowW = 11, ArrowH = 12, ArrowScale = 2;
+            var arrowSrc = e.IsRevealed
+                ? new Rectangle(421, 459, ArrowW, ArrowH)   // up arrow (same as scroll-up button)
+                : new Rectangle(421, 472, ArrowW, ArrowH);  // down arrow (same as scroll-down button)
+            int arrowDrawW = ArrowW * ArrowScale;
+            int arrowDrawH = ArrowH * ArrowScale;
+            int arrowX     = x + maxWidth - arrowDrawW - 8;
+            int arrowY     = y + (SpoilerEntry.HeaderHeight - arrowDrawH) / 2;
+            b.Draw(Game1.mouseCursors, new Rectangle(arrowX, arrowY, arrowDrawW, arrowDrawH), arrowSrc, Color.White);
 
             y += SpoilerEntry.HeaderHeight;
 

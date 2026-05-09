@@ -11,20 +11,28 @@ namespace GenericModDocumentationFramework.Rendering
     {
         public string?         Text     { get; }
         public ParsedItemData? ItemData { get; }
-        public bool            IsSprite => ItemData != null;
+        public string?         EmoteName { get; }
 
-        private InlineSegment(string text)         { Text = text; }
-        private InlineSegment(ParsedItemData item) { ItemData = item; }
+        /// <summary>True when this segment is a Stardew item sprite, resolved via ItemRegistry.</summary>
+        public bool IsSprite => ItemData != null;
 
-        public static InlineSegment FromText(string text)         => new(text);
-        public static InlineSegment FromItem(ParsedItemData item) => new(item);
+        /// <summary>True when this segment is a custom framework emote, resolved via EmoteRegistry.</summary>
+        public bool IsEmote  => EmoteName != null;
+
+        private InlineSegment(string text)                    { Text      = text; }
+        private InlineSegment(ParsedItemData item)            { ItemData  = item; }
+        private InlineSegment(string emoteName, bool isEmote) { EmoteName = emoteName; }
+
+        public static InlineSegment FromText(string text)          => new(text);
+        public static InlineSegment FromItem(ParsedItemData item)  => new(item);
+        public static InlineSegment FromEmote(string emoteName)    => new(emoteName, true);
 
         public static float MeasureLineWidth(List<InlineSegment> line, SpriteFont font, int spriteSize)
         {
             float w = 0f;
             foreach (var seg in line)
             {
-                if (seg.IsSprite)
+                if (seg.IsSprite || seg.IsEmote)
                     w += spriteSize + 2;
                 else if (!string.IsNullOrEmpty(seg.Text))
                     w += font.MeasureString(seg.Text).X;
@@ -36,12 +44,17 @@ namespace GenericModDocumentationFramework.Rendering
 
     public static class InlineParser
     {
-        // Matches inline item sprite tokens only: [128] or [(O)128] or [(BC)12] etc.
-        // The item ID must be numeric — this deliberately excludes word-based tokenizable
-        // string tokens like [FarmName] or [FarmerName], which are resolved earlier by
-        // TokenParser and should never reach this stage as raw bracket text.
-        private static readonly Regex TokenPattern =
+        // Matches Stardew item sprite tokens: [128] or [(O)128] or [(BC)12] etc.
+        // Item ID must be numeric — this deliberately excludes word-based tokenizable
+        // string tokens like [FarmName] which are resolved earlier by TokenParser.
+        private static readonly Regex ItemTokenPattern =
             new(@"\[(\([A-Za-z]+\))?(\d+)\]", RegexOptions.Compiled);
+
+        // Matches custom framework emote tokens: {heart} {star} etc.
+        // Name must be one or more word characters (letters, digits, underscore).
+        // Deliberately distinct from item tokens ([...]) and i18n tokens ({{...}}).
+        private static readonly Regex EmoteTokenPattern =
+            new(@"\{([A-Za-z_][A-Za-z0-9_]*)\}", RegexOptions.Compiled);
 
         public static List<List<InlineSegment>> WrapRich(
             string text, SpriteFont font, int maxWidth, int spriteSize)
@@ -60,14 +73,15 @@ namespace GenericModDocumentationFramework.Rendering
 
         private static List<InlineSegment> Tokenize(string line)
         {
-            var atoms  = new List<InlineSegment>();
-            int cursor = 0;
+            var atoms = new List<InlineSegment>();
 
-            foreach (Match m in TokenPattern.Matches(line))
+            // Merge both token patterns into a single left-to-right pass so that
+            // item tokens and emote tokens interleave correctly with plain text.
+            // We build a combined match list sorted by position.
+            var allMatches = new List<(int index, int length, InlineSegment segment)>();
+
+            foreach (Match m in ItemTokenPattern.Matches(line))
             {
-                if (m.Index > cursor)
-                    SplitWords(line.Substring(cursor, m.Index - cursor), atoms);
-
                 string qualifier = m.Groups[1].Value;
                 string itemId    = m.Groups[2].Value;
                 string qualId    = string.IsNullOrEmpty(qualifier)
@@ -75,11 +89,34 @@ namespace GenericModDocumentationFramework.Rendering
                     : qualifier + itemId;
 
                 var data = ItemRegistry.GetDataOrErrorItem(qualId);
-                atoms.Add(InlineSegment.FromItem(data));
-
-                cursor = m.Index + m.Length;
+                allMatches.Add((m.Index, m.Length, InlineSegment.FromItem(data)));
             }
 
+            foreach (Match m in EmoteTokenPattern.Matches(line))
+            {
+                string emoteName = m.Groups[1].Value;
+
+                // Only treat as an emote token if the name is actually registered.
+                // Unrecognised {tokens} are left as plain text so they don't silently disappear.
+                if (EmoteRegistry.IsRegistered(emoteName))
+                    allMatches.Add((m.Index, m.Length, InlineSegment.FromEmote(emoteName)));
+            }
+
+            // Sort all matches by their position in the source string.
+            allMatches.Sort((a, b) => a.index.CompareTo(b.index));
+
+            int cursor = 0;
+            foreach (var (index, length, segment) in allMatches)
+            {
+                // Plain text between the previous match and this one.
+                if (index > cursor)
+                    SplitWords(line.Substring(cursor, index - cursor), atoms);
+
+                atoms.Add(segment);
+                cursor = index + length;
+            }
+
+            // Any remaining plain text after the last match.
             if (cursor < line.Length)
                 SplitWords(line.Substring(cursor), atoms);
 
@@ -118,7 +155,7 @@ namespace GenericModDocumentationFramework.Rendering
                     currentLine  = new List<InlineSegment>();
                     currentWidth = 0f;
 
-                    if (!atom.IsSprite && atom.Text != null)
+                    if (!atom.IsSprite && !atom.IsEmote && atom.Text != null)
                     {
                         string trimmed = atom.Text.TrimStart(' ');
                         if (trimmed.Length > 0)
@@ -147,7 +184,7 @@ namespace GenericModDocumentationFramework.Rendering
 
         private static float MeasureAtom(InlineSegment atom, SpriteFont font, int spriteSize)
         {
-            if (atom.IsSprite) return spriteSize + 2;
+            if (atom.IsSprite || atom.IsEmote) return spriteSize + 2;
             return string.IsNullOrEmpty(atom.Text) ? 0f : font.MeasureString(atom.Text).X;
         }
 
@@ -155,7 +192,7 @@ namespace GenericModDocumentationFramework.Rendering
         {
             if (line.Count == 0) return;
             var last = line[line.Count - 1];
-            if (!last.IsSprite && last.Text != null && last.Text.EndsWith(" "))
+            if (!last.IsSprite && !last.IsEmote && last.Text != null && last.Text.EndsWith(" "))
             {
                 string trimmed = last.Text.TrimEnd(' ');
                 line[line.Count - 1] = trimmed.Length > 0

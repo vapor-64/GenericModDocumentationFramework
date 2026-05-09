@@ -957,6 +957,13 @@ namespace GenericModDocumentationFramework.Menus
                                 b.Draw(tex, new Rectangle((int)cx, y, lineH, lineH), src, Color.White);
                                 cx += lineH + 2;
                             }
+                            else if (seg.IsEmote)
+                            {
+                                var tex = EmoteRegistry.TryGet(seg.EmoteName!);
+                                if (tex != null)
+                                    b.Draw(tex, new Rectangle((int)cx, y, lineH, lineH), Color.White);
+                                cx += lineH + 2;
+                            }
                             else if (!string.IsNullOrEmpty(seg.Text))
                             {
                                 b.DrawString(Game1.dialogueFont, seg.Text, new Vector2(cx, y), SectionTitleColor,
@@ -1733,6 +1740,14 @@ namespace GenericModDocumentationFramework.Menus
                         var src = seg.ItemData.GetSourceRect();
                         int sz  = (int)Math.Round(_smallFontLineH * scale);
                         b.Draw(tex, new Rectangle((int)cx, y, sz, sz), src, Color.White);
+                        cx += sz + 2;
+                    }
+                    else if (seg.IsEmote)
+                    {
+                        var tex = EmoteRegistry.TryGet(seg.EmoteName!);
+                        int sz  = (int)Math.Round(_smallFontLineH * scale);
+                        if (tex != null)
+                            b.Draw(tex, new Rectangle((int)cx, y, sz, sz), Color.White);
                         cx += sz + 2;
                     }
                     else if (!string.IsNullOrEmpty(seg.Text))

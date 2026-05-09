@@ -1,6 +1,7 @@
 using GenericModDocumentationFramework.Loaders;
 using GenericModDocumentationFramework.Menus;
 using GenericModDocumentationFramework.Registry;
+using GenericModDocumentationFramework.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -57,6 +58,8 @@ namespace GenericModDocumentationFramework
             _fontSettingsActive = Helper.ModRegistry.IsLoaded("Becks723.FontSettings");
             if (_fontSettingsActive)
                 Monitor.Log("Font Settings mod detected — tab widths will be tripled to accommodate large fonts.", LogLevel.Debug);
+
+            EmoteRegistry.RegisterBuiltIns();
 
             JsonDocumentationLoader.DiscoverAndLoad(_registry, Helper, Monitor);
         }

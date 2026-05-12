@@ -22,8 +22,13 @@
     },
     "pages": {
       "type": "array",
-      "description": "Documentation pages. If omitted or empty, an empty 'Overview' page is shown.",
+      "description": "Documentation pages. In single-file mode, each object contains full page content. In multi-file mode (documentation/ folder), this array is ignored — use pageOrder instead.",
       "items": { "$ref": "#/$defs/page" }
+    },
+    "pageOrder": {
+      "type": "array",
+      "description": "Multi-file mode only. Explicit tab ordering by page id (matching each documentation.<id>.json file or the id field inside it). Pages not listed are appended alphabetically after the listed ones.",
+      "items": { "type": "string" }
     }
   },
   "$defs": {

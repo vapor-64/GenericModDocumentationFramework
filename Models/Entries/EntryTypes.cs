@@ -178,15 +178,18 @@ namespace GenericModDocumentationFramework.Models.Entries
     {
         public EntryType    Type       => EntryType.Spoiler;
         public Func<string> GetLabel   { get; }
-        public Func<string> GetContent { get; }
         public bool         IsRevealed { get; set; } = false;
 
         public const int HeaderHeight = 32;
+        public const int ChildGap     = 8;
+        public const int ChildPadding = 8;
 
-        public SpoilerEntry(Func<string> getLabel, Func<string> getContent)
+        public IReadOnlyList<IDocumentationEntry> Children { get; }
+
+        public SpoilerEntry(Func<string> getLabel, IReadOnlyList<IDocumentationEntry> children)
         {
-            GetLabel   = getLabel;
-            GetContent = getContent;
+            GetLabel = getLabel;
+            Children = children;
         }
     }
 

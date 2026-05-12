@@ -601,8 +601,11 @@ namespace GenericModDocumentationFramework.Menus
         private int MeasureSpoilerHeight(SpoilerEntry entry, int maxWidth)
         {
             int h = SpoilerEntry.HeaderHeight;
-            if (entry.IsRevealed)
-                h += 4 + MeasureScaledTextHeight(entry.GetContent(), maxWidth - Padding, null, (int)SmallFontNaturalPx);
+            if (entry.IsRevealed && entry.Children.Count > 0)
+            {
+                int innerW = maxWidth - SpoilerEntry.ChildPadding * 2;
+                h += SpoilerEntry.ChildPadding + MeasureColumnHeight(entry.Children, Math.Max(1, innerW)) + SpoilerEntry.ChildPadding;
+            }
             return h;
         }
 
@@ -1105,7 +1108,7 @@ namespace GenericModDocumentationFramework.Menus
                 }
 
                 case EntryType.Spoiler:
-                    DrawSpoiler(b, (SpoilerEntry)entry, x, ref y, maxWidth, font);
+                    DrawSpoiler(b, (SpoilerEntry)entry, x, ref y, maxWidth, font, entryIndex >= 0 ? _entryHeights[entryIndex] : MeasureSpoilerHeight((SpoilerEntry)entry, maxWidth));
                     break;
 
                 case EntryType.Row:
@@ -1265,7 +1268,7 @@ namespace GenericModDocumentationFramework.Menus
             y += cachedH;
         }
 
-        private void DrawSpoiler(SpriteBatch b, SpoilerEntry e, int x, ref int y, int maxWidth, SpriteFont font)
+        private void DrawSpoiler(SpriteBatch b, SpoilerEntry e, int x, ref int y, int maxWidth, SpriteFont font, int cachedH)
         {
             Color spoilerHover = new(
                 Math.Min(255, SpoilerHeaderColor.R + 40),
@@ -1282,11 +1285,10 @@ namespace GenericModDocumentationFramework.Menus
             Utility.drawTextWithShadow(b, label, font, new Vector2(x + 8, textY), Color.White);
 
             // Arrow icon: up-arrow when revealed, down-arrow when collapsed.
-            // Reuses the same cursor sprite-sheet source rects as the scroll buttons.
             const int ArrowW = 11, ArrowH = 12, ArrowScale = 2;
             var arrowSrc = e.IsRevealed
-                ? new Rectangle(421, 459, ArrowW, ArrowH)   // up arrow (same as scroll-up button)
-                : new Rectangle(421, 472, ArrowW, ArrowH);  // down arrow (same as scroll-down button)
+                ? new Rectangle(421, 459, ArrowW, ArrowH)
+                : new Rectangle(421, 472, ArrowW, ArrowH);
             int arrowDrawW = ArrowW * ArrowScale;
             int arrowDrawH = ArrowH * ArrowScale;
             int arrowX     = x + maxWidth - arrowDrawW - 8;
@@ -1295,19 +1297,24 @@ namespace GenericModDocumentationFramework.Menus
 
             y += SpoilerEntry.HeaderHeight;
 
-            if (e.IsRevealed)
+            if (e.IsRevealed && e.Children.Count > 0)
             {
-                int innerW   = maxWidth - Padding * 2;
-                var lines    = WrapRich(e.GetContent(), font, innerW);
-                int lineH    = _smallFontLineH + 2;
-                int contentH = 4 + lines.Count * lineH;
+                int contentH = cachedH - SpoilerEntry.HeaderHeight;
 
                 b.Draw(Game1.fadeToBlackRect,
                     new Rectangle(x, y, maxWidth, contentH),
                     new Color(245, 230, 200) * 0.6f);
 
-                int ty = y + 4;
-                DrawRichLines(b, lines, font, x + Padding, ref ty, innerW, Game1.textColor);
+                int innerX = x + SpoilerEntry.ChildPadding;
+                int innerW = maxWidth - SpoilerEntry.ChildPadding * 2;
+                int childY = y + SpoilerEntry.ChildPadding;
+
+                for (int i = 0; i < e.Children.Count; i++)
+                {
+                    DrawEntry(b, e.Children[i], -1, innerX, ref childY, innerW, font);
+                    if (i < e.Children.Count - 1)
+                        childY += SpoilerEntry.ChildGap;
+                }
 
                 y += contentH;
             }
@@ -1484,6 +1491,22 @@ namespace GenericModDocumentationFramework.Menus
                     Game1.playSound("smallSelect");
                     MeasureContentHeight();
                     return true;
+                }
+
+                // Hit-test children when revealed
+                if (spoiler.IsRevealed && spoiler.Children.Count > 0)
+                {
+                    int innerX = ex + SpoilerEntry.ChildPadding;
+                    int innerW = ew  - SpoilerEntry.ChildPadding * 2;
+                    int colY   = ey + SpoilerEntry.HeaderHeight + SpoilerEntry.ChildPadding;
+
+                    for (int i = 0; i < spoiler.Children.Count; i++)
+                    {
+                        int subH = MeasureEntryHeight(spoiler.Children[i], innerW);
+                        if (HitTestEntry(spoiler.Children[i], x, y, innerX, colY, innerW, subH))
+                            return true;
+                        colY += subH + SpoilerEntry.ChildGap;
+                    }
                 }
             }
             else if (entry is LinkEntry link)

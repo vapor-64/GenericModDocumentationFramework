@@ -8,6 +8,14 @@ namespace GenericModDocumentationFramework.Models.Json
         public int     Format  { get; set; }
         public string  ModName { get; set; } = "";
         public List<PageData> Pages { get; set; } = new();
+
+        /// <summary>
+        /// Multi-file mode only. Explicit ordering of page IDs (matched against each
+        /// page file's <c>id</c> field or its auto-derived slug).
+        /// Pages not listed here are appended after all listed pages, sorted
+        /// alphabetically by file name.
+        /// </summary>
+        public List<string>? PageOrder { get; set; }
     }
 
     public class PageData

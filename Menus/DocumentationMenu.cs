@@ -84,6 +84,10 @@ namespace GenericModDocumentationFramework.Menus
 
         private string? _tabHoverText;
 
+        // ── Tab strip scrolling ──────────────────────────────────────────────────
+        private int _tabScrollOffset = 0;   // horizontal scroll in pixels
+        private int _tabsTotalWidth  = 0;   // sum of all tab widths + gaps
+
         // ── Sidebar search bar ───────────────────────────────────────────────────
         private string  _searchQuery      = string.Empty;
         private double  _cursorBlinkTimer = 0.0;
@@ -293,6 +297,26 @@ namespace GenericModDocumentationFramework.Menus
             _selectedPage        = page;
             _contentScrollOffset = 0;
             MeasureContentHeight();
+            // Ensure the selected tab is visible in the scrollable strip
+            int pageIndex = -1;
+            for (int i = 0; i < _pages.Count; i++)
+                if (_pages[i] == page) { pageIndex = i; break; }
+            if (pageIndex >= 0) ScrollTabToVisible(pageIndex);
+        }
+
+        /// <summary>Adjust <see cref="_tabScrollOffset"/> so the tab at <paramref name="index"/> is fully visible.</summary>
+        private void ScrollTabToVisible(int index)
+        {
+            if (index < 0 || index >= _tabBounds.Length) return;
+            int maxTabScroll = Math.Max(0, _tabsTotalWidth - _tabsBounds.Width);
+            int tabL = _tabBounds[index].X;                          // relative left edge
+            int tabR = _tabBounds[index].X + _tabBounds[index].Width; // relative right edge
+            // Scroll left if tab is cut off on the left
+            if (tabL < _tabScrollOffset)
+                _tabScrollOffset = Math.Max(0, tabL);
+            // Scroll right if tab is cut off on the right
+            else if (tabR > _tabScrollOffset + _tabsBounds.Width)
+                _tabScrollOffset = Math.Min(maxTabScroll, tabR - _tabsBounds.Width);
         }
 
         private void NavigateTo(string resolvedModId, string? targetPageId, string? targetAnchor)
@@ -398,7 +422,8 @@ namespace GenericModDocumentationFramework.Menus
             _selectedPage = _pages.Count > 0 ? _pages[0] : null;
 
             _tabBounds = new Rectangle[_pages.Count];
-            int   tabX     = _tabsBounds.X;
+            _tabScrollOffset = 0;
+            int   tabX     = 0;   // stored relative to strip origin; offset applied at draw/hit-test
             float tabScale = _fontSettingsActive ? 1.025f : 1f;
 
             for (int i = 0; i < _pages.Count; i++)
@@ -409,6 +434,7 @@ namespace GenericModDocumentationFramework.Menus
                 _tabBounds[i] = new Rectangle(tabX, _tabsBounds.Y, w, TabHeight);
                 tabX += w + 4;
             }
+            _tabsTotalWidth = tabX > 0 ? tabX - 4 : 0;  // strip minus trailing gap
 
             MeasureContentHeight();
         }
@@ -1102,12 +1128,31 @@ namespace GenericModDocumentationFramework.Menus
 
         private void DrawPageTabs(SpriteBatch b)
         {
+            // ── Scissor the tab row so overflowing tabs are hidden ────────────────
+            var savedScissor    = b.GraphicsDevice.ScissorRectangle;
+            var savedRasterizer = b.GraphicsDevice.RasterizerState;
+
+            b.End();
+            b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, ScissorRasterizer);
+            b.GraphicsDevice.ScissorRectangle = _tabsBounds;
+
             for (int i = 0; i < _pages.Count; i++)
             {
-                var page      = _pages[i];
-                var tabBounds = _tabBounds[i];
+                var page = _pages[i];
+                // Apply scroll offset: _tabBounds[i].X is relative to strip origin
+                var tabBounds = new Rectangle(
+                    _tabsBounds.X + _tabBounds[i].X - _tabScrollOffset,
+                    _tabBounds[i].Y,
+                    _tabBounds[i].Width,
+                    _tabBounds[i].Height);
+
+                // Skip tabs that are entirely outside the visible strip
+                if (tabBounds.Right <= _tabsBounds.X || tabBounds.X >= _tabsBounds.Right)
+                    continue;
+
                 bool selected = page == _selectedPage;
-                bool hovered  = tabBounds.Contains(Game1.getMouseX(), Game1.getMouseY());
+                bool hovered  = tabBounds.Contains(Game1.getMouseX(), Game1.getMouseY())
+                                && _tabsBounds.Contains(Game1.getMouseX(), Game1.getMouseY());
 
                 if (selected)     b.Draw(Game1.fadeToBlackRect, tabBounds, _accentColor);
                 else if (hovered) b.Draw(Game1.fadeToBlackRect, tabBounds, HoverColor * 0.3f);
@@ -1138,6 +1183,38 @@ namespace GenericModDocumentationFramework.Menus
                 if (hovered && tabLabel != fullName)
                     _tabHoverText = fullName;
             }
+
+            // ── Draw scroll-overflow fade indicators ─────────────────────────────
+            bool canScrollLeft  = _tabScrollOffset > 0;
+            bool canScrollRight = _tabsTotalWidth > _tabScrollOffset + _tabsBounds.Width;
+
+            if (canScrollLeft)
+            {
+                // Left fade / arrow
+                var fadeRect = new Rectangle(_tabsBounds.X, _tabsBounds.Y, 24, _tabsBounds.Height);
+                b.Draw(Game1.fadeToBlackRect, fadeRect, new Color(50, 30, 10) * 0.35f);
+                // Left arrow (◄) using Stardew scroll cursor
+                b.Draw(Game1.mouseCursors,
+                    new Rectangle(_tabsBounds.X + 2, _tabsBounds.Y + (_tabsBounds.Height - 16) / 2, 8, 16),
+                    new Rectangle(421, 459, 11, 12),   // up-arrow sprite, rotated 90° via effect
+                    Color.White * 0.85f, MathF.PI * -0.5f,
+                    new Vector2(11f / 2f, 12f / 2f), SpriteEffects.None, 0f);
+            }
+            if (canScrollRight)
+            {
+                // Right fade / arrow
+                var fadeRect = new Rectangle(_tabsBounds.Right - 24, _tabsBounds.Y, 24, _tabsBounds.Height);
+                b.Draw(Game1.fadeToBlackRect, fadeRect, new Color(50, 30, 10) * 0.35f);
+                b.Draw(Game1.mouseCursors,
+                    new Rectangle(_tabsBounds.Right - 10, _tabsBounds.Y + (_tabsBounds.Height - 16) / 2, 8, 16),
+                    new Rectangle(421, 459, 11, 12),
+                    Color.White * 0.85f, MathF.PI * 0.5f,
+                    new Vector2(11f / 2f, 12f / 2f), SpriteEffects.None, 0f);
+            }
+
+            b.End();
+            b.GraphicsDevice.ScissorRectangle = savedScissor;
+            b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, savedRasterizer);
         }
 
         private void DrawContent(SpriteBatch b)
@@ -1827,7 +1904,13 @@ namespace GenericModDocumentationFramework.Menus
             {
                 for (int i = 0; i < _tabBounds.Length; i++)
                 {
-                    if (_tabBounds[i].Contains(x, y))
+                    // Reconstruct the scrolled screen-space rect for this tab
+                    var screenTab = new Rectangle(
+                        _tabsBounds.X + _tabBounds[i].X - _tabScrollOffset,
+                        _tabBounds[i].Y,
+                        _tabBounds[i].Width,
+                        _tabBounds[i].Height);
+                    if (screenTab.Contains(x, y))
                     {
                         if (_pages[i] != _selectedPage)
                         {
@@ -2073,6 +2156,12 @@ namespace GenericModDocumentationFramework.Menus
             {
                 int maxSidebarScroll = Math.Max(0, _filteredMods.Count * SidebarItemHeight - _sidebarBounds.Height);
                 _sidebarScrollOffset = Math.Clamp(_sidebarScrollOffset - direction / 3, 0, maxSidebarScroll);
+            }
+            else if (_tabsBounds.Contains(mx, my))
+            {
+                // Horizontal scroll of the tab strip (scroll wheel scrolls left/right)
+                int maxTabScroll = Math.Max(0, _tabsTotalWidth - _tabsBounds.Width);
+                _tabScrollOffset = Math.Clamp(_tabScrollOffset - direction / 3, 0, maxTabScroll);
             }
             else if (_contentBounds.Contains(mx, my))
             {

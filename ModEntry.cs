@@ -59,7 +59,7 @@ namespace GenericModDocumentationFramework
             if (_fontSettingsActive)
                 Monitor.Log("Font Settings mod detected — tab widths will be tripled to accommodate large fonts.", LogLevel.Debug);
 
-            EmoteRegistry.RegisterBuiltIns();
+            EmoteRegistry.RegisterBuiltIns(Helper, Monitor);
 
             JsonDocumentationLoader.DiscoverAndLoad(_registry, Helper, Monitor);
         }

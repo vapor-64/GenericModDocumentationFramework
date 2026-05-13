@@ -1639,9 +1639,13 @@ namespace GenericModDocumentationFramework.Menus
             bool hovered    = headerRect.Contains(Game1.getMouseX(), Game1.getMouseY());
             b.Draw(Game1.fadeToBlackRect, headerRect, hovered ? spoilerHover : SpoilerHeaderColor);
 
-            string label = e.GetLabel();
-            float  textY = y + (SpoilerEntry.HeaderHeight - _smallFontLineH) / 2f;
-            DrawHighlightedText(b, font, label, new Vector2(x + 8, textY), Color.White, 1f, highlightQuery);
+            // Render the label as a rich line so inline emote tokens (e.g. {heart}) are drawn as sprites.
+            string label    = e.GetLabel();
+            int    labelMaxW = maxWidth - 8 - (SpoilerEntry.HeaderHeight); // leave room for arrow on right
+            var    labelSegs = InlineParser.WrapRich(label, font, labelMaxW, _smallFontLineH);
+            int    textY     = y + (SpoilerEntry.HeaderHeight - _smallFontLineH) / 2;
+            if (labelSegs.Count > 0)
+                DrawRichLine(b, labelSegs[0], font, x + 8, textY, Color.White, 1f, _smallFontLineH, highlightQuery);
 
             const int ArrowW = 11, ArrowH = 12, ArrowScale = 2;
             var arrowSrc = e.IsRevealed

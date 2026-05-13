@@ -23,6 +23,7 @@
 
   "ui.link-confirm":            "Open this link in your browser?\n{{url}}",
 
-  "ui.search-placeholder":      "Search mods...",
-  "ui.search-no-results":       "No mods match your search."
+  "ui.search-placeholder":          "Search mods...",
+  "ui.search-no-results":           "No mods match your search.",
+  "ui.content-search-placeholder":  "Search docs..."
 }

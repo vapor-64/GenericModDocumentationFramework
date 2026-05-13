@@ -284,7 +284,7 @@ namespace GenericModDocumentationFramework
                 Monitor.Log("No mods have registered documentation yet.", LogLevel.Info);
 
             var mods = _registry.GetAllMods();
-            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation, _config, _fontSettingsActive);
+            Game1.activeClickableMenu = new DocumentationMenu(mods, Helper.Translation, _config, _fontSettingsActive, Monitor);
             Game1.playSound("bigSelect");
         }
     }

@@ -107,6 +107,10 @@ namespace GenericModDocumentationFramework
         private void OnWindowResized(object? sender, WindowResizedEventArgs e)
         {
             RebuildHudButton();
+
+            // If the documentation menu is currently open, re-layout it for the new viewport
+            if (Game1.activeClickableMenu is DocumentationMenu docMenu)
+                docMenu.Reinitialize();
         }
 
         private void LoadButtonTexture()

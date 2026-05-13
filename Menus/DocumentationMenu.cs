@@ -187,6 +187,43 @@ namespace GenericModDocumentationFramework.Menus
             RebuildFilter();
         }
 
+        /// <summary>
+        /// Called when the game window is resized. Re-computes the menu's position, all internal
+        /// layout rectangles, scroll buttons, and content measurements so the UI fits the new viewport.
+        /// </summary>
+        public void Reinitialize()
+        {
+            // Re-anchor the IClickableMenu base position to the new viewport
+            xPositionOnScreen = (int)(Game1.uiViewport.Width  * (1f - MenuScale) / 2f);
+            yPositionOnScreen = (int)(Game1.uiViewport.Height * (1f - MenuScale) / 2f);
+            width             = (int)(Game1.uiViewport.Width  * MenuScale);
+            height            = (int)(Game1.uiViewport.Height * MenuScale);
+
+            // Reposition the close button that IClickableMenu places in the top-right
+            if (upperRightCloseButton != null)
+            {
+                upperRightCloseButton.bounds.X = xPositionOnScreen + width - 36;
+                upperRightCloseButton.bounds.Y = yPositionOnScreen - 8;
+            }
+
+            // Rebuild every derived rectangle (sidebar, tabs, content, search bars, scroll buttons)
+            CalculateBounds();
+            CreateScrollButtons();
+
+            // Remeasure content for the new content-area width
+            RebuildPageState();
+
+            // Clamp scroll offsets that may now be out of range
+            int maxContent = Math.Max(0, _totalContentHeight - _contentBounds.Height + Padding);
+            _contentScrollOffset = Math.Clamp(_contentScrollOffset, 0, maxContent);
+
+            int maxTab = Math.Max(0, _tabsTotalWidth - _tabsBounds.Width);
+            _tabScrollOffset = Math.Clamp(_tabScrollOffset, 0, maxTab);
+
+            int maxSidebar = Math.Max(0, _filteredMods.Count * SidebarItemHeight - _sidebarBounds.Height);
+            _sidebarScrollOffset = Math.Clamp(_sidebarScrollOffset, 0, maxSidebar);
+        }
+
         // ── Font helpers ──────────────────────────────────────────────────────────
 
         private (float drawScale, int lineH) SmallFontParams(int? fontSizeOverride, int defaultPx)

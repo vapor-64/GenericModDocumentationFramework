@@ -83,6 +83,7 @@ namespace GenericModDocumentationFramework.Menus
         private ClickableTextureComponent _scrollDownButton = null!;
 
         private string? _tabHoverText;
+        private string? _hoveredEmoteName;
 
         // ── Tab strip scrolling ──────────────────────────────────────────────────
         private int _tabScrollOffset = 0;   // horizontal scroll in pixels
@@ -873,7 +874,8 @@ namespace GenericModDocumentationFramework.Menus
         {
             try
             {
-                _tabHoverText = null;
+                _tabHoverText    = null;
+                _hoveredEmoteName = null;
 
                 drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
                     xPositionOnScreen, yPositionOnScreen, width, height, Color.White, drawShadow: true);
@@ -906,6 +908,9 @@ namespace GenericModDocumentationFramework.Menus
 
                 if (_tabHoverText != null)
                     drawHoverText(b, _tabHoverText, Game1.smallFont);
+
+                if (_hoveredEmoteName != null)
+                    drawHoverText(b, _hoveredEmoteName, Game1.smallFont);
 
                 drawMouse(b);
             }
@@ -1748,7 +1753,10 @@ namespace GenericModDocumentationFramework.Menus
                     var tex = EmoteRegistry.TryGet(seg.EmoteName!);
                     int sz  = (int)Math.Round(_smallFontLineH * scale * 1.2f);
                     int oy  = (lineH - sz) / 2 - 4;
-                    if (tex != null) b.Draw(tex, new Rectangle((int)cx, y + oy, sz, sz), Color.White);
+                    var emoteRect = new Rectangle((int)cx, y + oy, sz, sz);
+                    if (tex != null) b.Draw(tex, emoteRect, Color.White);
+                    if (emoteRect.Contains(Game1.getMouseX(), Game1.getMouseY()))
+                        _hoveredEmoteName = seg.EmoteName;
                     cx += sz + 2;
                 }
                 else if (!string.IsNullOrEmpty(seg.Text))

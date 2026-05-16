@@ -1746,8 +1746,9 @@ namespace GenericModDocumentationFramework.Menus
                 else if (seg.IsEmote)
                 {
                     var tex = EmoteRegistry.TryGet(seg.EmoteName!);
-                    int sz  = (int)Math.Round(_smallFontLineH * scale);
-                    if (tex != null) b.Draw(tex, new Rectangle((int)cx, y, sz, sz), Color.White);
+                    int sz  = (int)Math.Round(_smallFontLineH * scale * 1.2f);
+                    int oy  = (lineH - sz) / 2 - 4;
+                    if (tex != null) b.Draw(tex, new Rectangle((int)cx, y + oy, sz, sz), Color.White);
                     cx += sz + 2;
                 }
                 else if (!string.IsNullOrEmpty(seg.Text))
